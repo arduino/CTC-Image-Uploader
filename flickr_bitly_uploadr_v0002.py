@@ -40,7 +40,7 @@ import webbrowser
 import requests
 import json
 import pprint
-
+from itertools import groupby, chain
 
 from xml.etree import ElementTree
 from reportlab.platypus.tables import Table
@@ -306,10 +306,13 @@ def bitlyShorten(photourl):
 ## the id of the parent collection as a reference
 def getCollections(cursor):
     # get the information from the table with the collections
-    command = "SELECT * FROM " + dbTableCollections + " WHERE parent LIKE '" + idParentCollection + "'"
+    command = "SELECT id_local,name FROM " + dbTableCollections + " WHERE parent LIKE '" + idParentCollection + "'"
     cursor.execute(command)
+    res=[]
     for row in cursor:
         # if it is in the collection, then get the id and print it
+        res.append(row)
+        '''
         for field in row.keys():
             if type(row[field]) is int:
                 str2 = str(row[field])
@@ -321,6 +324,8 @@ def getCollections(cursor):
                 listCollections.append(str2)
                 if ver == 1:
                     print str2
+        '''
+    return res
 
 ## 
 def getCollectionName(cursor):
@@ -330,6 +335,7 @@ def getCollectionName(cursor):
     collectionName = ""
     for row in cursor:
         # if it is in the collection, then get the id and print it
+        '''
         for field in row.keys():
             if type(row[field]) is int:
                 str2 = str(row[field])
@@ -341,6 +347,7 @@ def getCollectionName(cursor):
                 collectionName = str2
                 if ver == 1:
                     print str2
+        '''
     # Return the name of the collection
     return collectionName
 
@@ -368,13 +375,16 @@ def getSetName(cursor):
     return setName
 
 ##
-def getImagesInSet(cursor):
-    command = "SELECT * FROM " + dbTableImages + " WHERE collection LIKE '" + collection + "'"
+def getImagesInSet(cursor, collection):
+    command = "SELECT image, positionInCollection FROM " + dbTableImages + " WHERE collection LIKE '" + str(collection) + "'"
     cursor.execute(command)
+    listImages=[]
     for row in cursor:
         # if it is in the collection, then get the id and print it
-        idImage = ""
-        posImage = ""
+        listImages.append(row)
+        #idImage = row["image"]
+        #posImage = row["positionInCollection"]
+        '''
         for field in row.keys():
             if type(row[field]) is int:
                 str2 = str(row[field])
@@ -395,9 +405,27 @@ def getImagesInSet(cursor):
                 posImage = str2
         if idImage != "":
             # print collection + ":" + idImage + ":" + posImage
-            listImages.append(collection + ":" + idImage + ":" + posImage)
+            #listImages.append(collection + ":" + str(idImage) + ":" + str(posImage))
+        '''
+    return listImages
 
 ##
+def getImgFiles(cursor, idImages):
+    command = '''SELECT {0}.id_local, {1}.baseName, {2}.caption
+    FROM {0}
+    INNER JOIN {1}
+    ON {0}.rootFile={1}.id_local
+    INNER JOIN {2}
+    ON {0}.id_local={2}.image
+    WHERE {0}.id_local in ({3});
+    '''.format(dbTableAdobeImages,dbTableFiles,dbTableCaptions,",".join(str(i) for i in idImages))
+    cursor.execute(command)
+    listFiles=[]
+    for row in cursor:
+        listFiles.append(row)
+    return listFiles
+
+    #"SELECT "+dbTableFiles+".baseName FROM " + dbTableAdobeImages + "INNHER JOIN "+dbTableFiles+" ON  WHERE id_local LIKE '" + idImage + "'"
 def getRootFiles(cursor,collection,idImage,posImage,rootFile,listRootFiles):
     # make the search
     command = "SELECT * FROM " + dbTableAdobeImages + " WHERE id_local LIKE '" + idImage + "'"
@@ -463,7 +491,7 @@ def getCaption(cursor,collection,idImage,posImage,rootFile,baseName,listCTCpictu
 
 
 ## This is the function to render the PDF for one collection given the CSS defined earler
-def renderCollectionPDF():
+def renderCollectionPDF(filepathLogo,reportName,setName,collectionName,listCTCpicturesLocal,countImages):
     #and here we render MF PDFs!!
     #styles=getSampleStyleSheet()
     Elements=[]
@@ -500,7 +528,7 @@ def renderCollectionPDF():
 
     index = 1
     for p in listCTCpicturesLocal:
-        print p.collection + ":" + p.idImage + ":" + str(p.posImage) + ":" + p.idFile + ":" + p.filename + ":" + p.caption
+        #print p.collection + ":" + p.idImage + ":" + str(p.posImage) + ":" + p.idFile + ":" + p.filename + ":" + p.caption
 
         # get the existing files
         filepath = thePath + p.filename + ".jpg"
@@ -560,10 +588,7 @@ with sqlite3.connect(filename) as conn:
     cursor = conn.cursor()
 
     # Get the list of collections under a certain parent
-    getCollections(cursor)
-
-    # Get the name of the collection
-    collectionName = getCollectionName(cursor)
+    listCollections=getCollections(cursor)
     
     print "Begin!"
     # Get the information from the table with the images in the collections
@@ -586,13 +611,35 @@ with sqlite3.connect(filename) as conn:
         listCTCpicturesLocal = []
 
         # Get the name of the set we are working with
-        setName = getSetName(cursor)
+        setName = collection[1]
         
         # Get the images in the set (populates listImages[])
-        getImagesInSet(cursor)
-        
+        listImages=getImagesInSet(cursor, collection[0])
+        print len(listImages)
+        listImages=listImages[:10]
+        imgFiles=getImgFiles(cursor, [i[0] for i in listImages])
+
+        lst=sorted(chain(listImages,imgFiles),key=lambda x:x[0])
+        resultList=[]
+        for k,g in groupby(lst,key=lambda x:x[0]):
+            d={}
+            for dct in g:
+                d.update(dct)
+            d=dict((key,value) for key,value in d.iteritems() if key in ("id_local","baseName","caption","positionInCollection"))
+            resultList.append(d)
+
+        resultList=sorted(resultList, key=lambda x: x["positionInCollection"])
+
+        #renderCollectionPDF(filepathLogo,reportName,setName,setName,resultList,len(listImages))
+        '''
         # Get the information from the table with the rootFiles in the collections
         countImages = 0
+        for image in listImages:
+            imgFiles=getImgFiles(cursor, collection[0])
+            print imgFiles
+            quit()
+
+
         for image in listImages:
             # Extract the image information
             collection = (image.split(":"))[0]
@@ -633,9 +680,10 @@ with sqlite3.connect(filename) as conn:
             getCaption(cursor,collection,idImage,posImage,rootFile,baseName,listCTCpicturesLocal)
         
         print len(listCTCpicturesLocal)
+        '''
 
         # Sort the list and add it to the global list
-        listCTCpicturesLocal = sorted(listCTCpicturesLocal, key=lambda pic: pic.posImage)
+        #listCTCpicturesLocal = sorted(listCTCpicturesLocal, key=lambda pic: pic.posImage)
         #print listCTCpicturesLocal
         ### HERE IS WHERE WE NEED TO UPLOAD AND GENERATE SHORTURL
 
