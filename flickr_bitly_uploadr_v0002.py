@@ -87,7 +87,7 @@ bitly_token = u'4555ea0b8d63a11269e82c733d5d1d2158d61d02'
 # parameters you shouldn't touch too often
 ##################################
 # insert the database name
-filename = "LightroomCatalog.lrcat"
+filename = "data/LightroomCatalog.lrcat"
 # database tables were we will perform the search
 dbTableCaptions = "AgLibraryIPTC"
 dbTableImages = "AgLibraryCollectionImage"
@@ -306,7 +306,7 @@ def bitlyShorten(photourl):
 ## the id of the parent collection as a reference
 def getCollections(cursor):
     # get the information from the table with the collections
-    command = "SELECT * FROM " + dbTableCollections + " WHERE parent LIKE '" + idCollection + "'"
+    command = "SELECT * FROM " + dbTableCollections + " WHERE parent LIKE '" + idParentCollection + "'"
     cursor.execute(command)
     for row in cursor:
         # if it is in the collection, then get the id and print it
@@ -398,7 +398,7 @@ def getImagesInSet(cursor):
             listImages.append(collection + ":" + idImage + ":" + posImage)
 
 ##
-def getRootFiles(cursor):
+def getRootFiles(cursor,collection,idImage,posImage,rootFile,listRootFiles):
     # make the search
     command = "SELECT * FROM " + dbTableAdobeImages + " WHERE id_local LIKE '" + idImage + "'"
     cursor.execute(command)
@@ -415,14 +415,15 @@ def getRootFiles(cursor):
         if rootFile != "":
             #print collection + ":" + idImage + ":" + posImage + ":" + rootFile
             listRootFiles.append(collection + ":" + idImage + ":" + posImage + ":" + rootFile)
-            countImages = countImages + 1
+            #countImages = countImages + 1
 
 ##
-def getBaseName(cursor):
+def getBaseName(cursor,collection,idImage,posImage,rootFile,listFiles):
     # make the search
     command = "SELECT * FROM " + dbTableFiles + " WHERE id_local LIKE '" + rootFile + "'"
     cursor.execute(command)
     for row in cursor:
+        baseName=""
         for field in row.keys():
             if type(row[field]) is int:
                 str2 = str(row[field])
@@ -437,7 +438,7 @@ def getBaseName(cursor):
             listFiles.append(collection + ":" + idImage + ":" + posImage + ":" + rootFile + ":" + baseName)
 
 ##
-def getCaption(cursor):
+def getCaption(cursor,collection,idImage,posImage,rootFile,baseName,listCTCpicturesLocal):
     # make the search
     command = "SELECT * FROM " + dbTableCaptions + " WHERE image LIKE '" + idImage + "'"
     cursor.execute(command)
@@ -564,6 +565,7 @@ with sqlite3.connect(filename) as conn:
     # Get the name of the collection
     collectionName = getCollectionName(cursor)
     
+    print "Begin!"
     # Get the information from the table with the images in the collections
     for collection in listCollections:
         print collection
@@ -599,7 +601,9 @@ with sqlite3.connect(filename) as conn:
             rootFile = ""
 
             # Get the list of root files (populates listRootFiles[])
-            getRootFiles(cursor)
+            getRootFiles(cursor,collection,idImage,posImage,rootFile,listRootFiles)
+
+        #print listRootFiles
             
         # Get the information from the table with the files in the collections
         for rootFileRow in listRootFiles:
@@ -611,7 +615,9 @@ with sqlite3.connect(filename) as conn:
             baseName = ""
 
             # Get the list of basenames (populates listFiles[])
-            getBaseName(cursor)
+            getBaseName(cursor,collection,idImage,posImage,rootFile,listFiles)
+
+        #print listFiles
 
         # get the information from the table with the captions in the collections
         for fileRow in listFiles:
@@ -624,12 +630,14 @@ with sqlite3.connect(filename) as conn:
             caption = ""
 
             # Get the caption for a certain image (populates listCaptions[] and listCTCpicturesLocal[])
-            getCaption(cursor)
-            
+            getCaption(cursor,collection,idImage,posImage,rootFile,baseName,listCTCpicturesLocal)
+        
+        print len(listCTCpicturesLocal)
+
         # Sort the list and add it to the global list
         listCTCpicturesLocal = sorted(listCTCpicturesLocal, key=lambda pic: pic.posImage)
-
+        #print listCTCpicturesLocal
         ### HERE IS WHERE WE NEED TO UPLOAD AND GENERATE SHORTURL
 
         # Render the PDF for this collection
-        renderCollectionPDF()
+        #renderCollectionPDF()
