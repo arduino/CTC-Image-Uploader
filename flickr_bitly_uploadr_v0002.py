@@ -628,64 +628,10 @@ with sqlite3.connect(filename) as conn:
             d=dict((key,value) for key,value in d.iteritems() if key in ("id_local","baseName","caption","positionInCollection"))
             resultList.append(d)
 
+        # Sort the list and add it to the global list
         resultList=sorted(resultList, key=lambda x: x["positionInCollection"])
 
-        #renderCollectionPDF(filepathLogo,reportName,setName,setName,resultList,len(listImages))
-        '''
-        # Get the information from the table with the rootFiles in the collections
-        countImages = 0
-        for image in listImages:
-            imgFiles=getImgFiles(cursor, collection[0])
-            print imgFiles
-            quit()
-
-
-        for image in listImages:
-            # Extract the image information
-            collection = (image.split(":"))[0]
-            idImage = (image.split(":"))[1]
-            posImage = (image.split(":"))[2]
-            rootFile = ""
-
-            # Get the list of root files (populates listRootFiles[])
-            getRootFiles(cursor,collection,idImage,posImage,rootFile,listRootFiles)
-
-        #print listRootFiles
-            
-        # Get the information from the table with the files in the collections
-        for rootFileRow in listRootFiles:
-            # Extract the image information
-            collection = (rootFileRow.split(":"))[0]
-            idImage = (rootFileRow.split(":"))[1]
-            posImage = (rootFileRow.split(":"))[2]
-            rootFile = (rootFileRow.split(":"))[3]
-            baseName = ""
-
-            # Get the list of basenames (populates listFiles[])
-            getBaseName(cursor,collection,idImage,posImage,rootFile,listFiles)
-
-        #print listFiles
-
-        # get the information from the table with the captions in the collections
-        for fileRow in listFiles:
-            # extract the image information
-            collection = (fileRow.split(":"))[0]
-            idImage = (fileRow.split(":"))[1]
-            posImage = (fileRow.split(":"))[2]
-            rootFile = (fileRow.split(":"))[3]
-            baseName = (fileRow.split(":"))[4]
-            caption = ""
-
-            # Get the caption for a certain image (populates listCaptions[] and listCTCpicturesLocal[])
-            getCaption(cursor,collection,idImage,posImage,rootFile,baseName,listCTCpicturesLocal)
-        
-        print len(listCTCpicturesLocal)
-        '''
-
-        # Sort the list and add it to the global list
-        #listCTCpicturesLocal = sorted(listCTCpicturesLocal, key=lambda pic: pic.posImage)
-        #print listCTCpicturesLocal
         ### HERE IS WHERE WE NEED TO UPLOAD AND GENERATE SHORTURL
 
         # Render the PDF for this collection
-        #renderCollectionPDF()
+        #renderCollectionPDF(filepathLogo,reportName,setName,setName,resultList,len(listImages))
