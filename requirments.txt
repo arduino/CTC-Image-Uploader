@@ -1,0 +1,8 @@
+flickrapi==2.1.2
+oauthlib==1.0.3
+Pillow==3.2.0
+reportlab==3.3.0
+requests==2.9.1
+requests-oauthlib==0.6.1
+requests-toolbelt==0.6.0
+six==1.10.0
