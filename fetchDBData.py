@@ -54,8 +54,18 @@ def getImgFiles(cursor, idImages):
     listFiles=[row for row in cursor]
     return listFiles
 
+def combineLists(list1,list2):
+    lst=sorted(chain(list1,list2),key=lambda x:x[0])
+    resultList=[]
+    for k,g in groupby(lst,key=lambda x:x[0]):
+        d={}
+        for dct in g:
+            d.update(dct)
+        d=dict((key,value) for key,value in d.iteritems() if key in ("id_local","baseName","caption","positionInCollection"))
+        resultList.append(d)
+    return resultList
 
-if __name__=="__main__":
+def extractAndPopulate():
     ## The Loop that will look into the DB
     with sqlite3.connect(filename) as conn:
         # Create a DB handler
@@ -81,20 +91,19 @@ if __name__=="__main__":
             print len(listImages)
             imgFiles=getImgFiles(cursor, [i[0] for i in listImages])
 
-            lst=sorted(chain(listImages,imgFiles),key=lambda x:x[0])
-            resultList=[]
-            for k,g in groupby(lst,key=lambda x:x[0]):
-                d={}
-                for dct in g:
-                    d.update(dct)
-                d=dict((key,value) for key,value in d.iteritems() if key in ("id_local","baseName","caption","positionInCollection"))
-                resultList.append(d)
-
+            resultList=combineLists(listImages,imgFiles)
             # Sort the list and add it to the global list
             resultList=sorted(resultList, key=lambda x: x["positionInCollection"])
+            #print resultList
             
-            '''
-            for one in resultList:
-                print one["id_local"]
-            '''
+            if collection[0]==idCollection:
+                print "###############"
+                for one in resultList:
+                    print one
+                print "###############"
+
+            
             ### Save the resultList into new db and do stuff
+
+if __name__=="__main__":
+    extractAndPopulate()
