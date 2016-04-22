@@ -1,5 +1,6 @@
 import sqlite3
 from itertools import groupby, chain
+from mainDB import CTCPhotoDB
 
 ##################################
 # parameters you shouldn't touch too often
@@ -66,6 +67,8 @@ def combineLists(list1,list2):
     return resultList
 
 def extractAndPopulate():
+    photoDB=CTCPhotoDB()
+
     ## The Loop that will look into the DB
     with sqlite3.connect(filename) as conn:
         # Create a DB handler
@@ -79,6 +82,8 @@ def extractAndPopulate():
         # Get the information from the table with the images in the collections
         for collection in listCollections:
             print collection
+            photoDB.addSet({"set_id":collection[0],"name":collection[1]})
+            photoDB.commit();
             # Init the arrays to be used when navigating a collection
             # List of images
             listImages = []
@@ -96,13 +101,17 @@ def extractAndPopulate():
             resultList=sorted(resultList, key=lambda x: x["positionInCollection"])
             #print resultList
             
-            if collection[0]==idCollection:
+            '''
+            if collection[0]==683635:
                 print "###############"
                 for one in resultList:
                     print one
                 print "###############"
-
-            
+            '''
+            #if collection[0]==683635:
+            for idx, one in enumerate(resultList):
+                photoDB.addPhoto({"ID":one["id_local"],"file_name":one["baseName"],"set_id":collection[0],"order_in_set":idx})
+            photoDB.commit();
             ### Save the resultList into new db and do stuff
 
 if __name__=="__main__":
