@@ -5,6 +5,7 @@ db_file="maindb.db"
 class CTCPhotoDB:
 	def __init__(self):
 		self.conn=sqlite3.connect(db_file)
+		self.conn.row_factory = sqlite3.Row
 		self.cursor=self.conn.cursor()
 
 	def createTables(self):
@@ -24,7 +25,8 @@ class CTCPhotoDB:
 		'''
 		CREATE TABLE IF NOT EXISTS sets(
 			set_id PRIMARY KEY,
-			name CHAR(125)
+			name CHAR(125),
+			hosted_id CHAR(15)
 		);
 		''']
 
@@ -32,10 +34,10 @@ class CTCPhotoDB:
 			self.cursor.execute(cmd)
 
 	def addSet(self, pack):
-		ipt=self.updatedInput({"set_id":"","name":""},pack)
+		ipt=self.updatedInput({"set_id":"","name":"","hosted_id":""},pack)
 		cmd='''
 		INSERT OR IGNORE INTO sets VALUES
-		('{set_id}','{name}')
+		('{set_id}','{name}','{hosted_id}')
 		'''.format(**ipt)
 
 		#print cmd
@@ -64,8 +66,34 @@ class CTCPhotoDB:
 
 		self.cursor.execute(cmd)
 
+	def modifySetByID(self, set_id, **kwargs):
+		self.modifyRec("sets","set_id",set_id, kwargs)
+
+	def modifyRec(self, tb_name, id_name, id_val, toModify):
+		tmp=["{}={}".format(k,v) for (k,v) in toModify.items()]
+		update_list=",".join(tmp)
+
+		cmd='''
+		UPDATE {tb_name}
+		SET {update_list}
+		WHERE {id_name} = {id_val}
+		'''.format(**locals())
+		print cmd
+
+
 	def commit(self):
 		self.conn.commit()
+
+	def getAllPhotos(self):
+		return self.getAllFromTable("photos")
+
+	def getAllSets(self):
+		return self.getAllFromTable("sets")
+
+	def getAllFromTable(self, tb_name):
+		cmd="SELECT * FROM "+tb_name
+		res=self.cursor.execute(cmd)
+		return res
 
 	def updatedInput(self, base, newData):
 		keys=base.keys()
@@ -87,4 +115,5 @@ if __name__=="__main__":
 			"set_id":"1214253",
 			"order_in_set":3,
 		})
+	query.commit()
 	'''
