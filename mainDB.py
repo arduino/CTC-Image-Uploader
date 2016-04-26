@@ -71,6 +71,10 @@ class CTCPhotoDB:
 	def modifySetByID(self, set_id, **kwargs):
 		self.modifyRec("sets","set_id",set_id, kwargs)
 
+	def setPhotoHostedID(self, photo_id, hosted_id):
+		hosted_id="'{}'".format(hosted_id)
+		self.modifyRec("photos","photo_id",photo_id,{"hosted_id":hosted_id}).commit()
+
 	def modifyRec(self, tb_name, id_name, id_val, toModify):
 		tmp=["{}={}".format(k,v) for (k,v) in toModify.items()]
 		update_list=",".join(tmp)
@@ -78,9 +82,10 @@ class CTCPhotoDB:
 		cmd='''
 		UPDATE {tb_name}
 		SET {update_list}
-		WHERE {id_name} = {id_val}
+		WHERE {id_name} = '{id_val}'
 		'''.format(**locals())
-		print cmd
+		#print cmd
+		return self.makeQuery(cmd)[1]
 
 
 	def commit(self):
@@ -94,8 +99,27 @@ class CTCPhotoDB:
 
 	def getAllFromTable(self, tb_name):
 		cmd="SELECT * FROM "+tb_name
-		res=self.cursor.execute(cmd)
+		return self.makeQuery(cmd)[0]
+
+	def getSetByID(self, set_id):
+		res=self.getRecByField("sets","set_id",set_id)
+		return res.fetchone()
+
+	def getPhotosBySetID(self,set_id):
+		res=self.getRecByField("photos","set_id",set_id)
 		return res
+
+	def getRecByField(self, tb_name,field_name,value):
+		cmd="SELECT * FROM {tb_name} WHERE {field_name}='{value}'".format(**locals())
+		return self.makeQuery(cmd)[0]
+
+	def makeQuery(self, cmd):
+		tmp_conn=sqlite3.connect(db_file)
+		tmp_conn.row_factory = sqlite3.Row
+		tmp_cursor=tmp_conn.cursor()
+		res=tmp_cursor.execute(cmd)
+		return res, tmp_conn
+
 
 	def updatedInput(self, base, newData):
 		keys=base.keys()
