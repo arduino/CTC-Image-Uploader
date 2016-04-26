@@ -80,6 +80,7 @@ def extractAndPopulate():
         
         print "Begin!"
         # Get the information from the table with the images in the collections
+        auto_id=0
         for collection in listCollections:
             print collection
             photoDB.addSet({"set_id":collection[0],"name":collection[1]})
@@ -110,8 +111,9 @@ def extractAndPopulate():
             '''
             #if collection[0]==683635:
             for idx, one in enumerate(resultList):
-                photoDB.addPhoto({"ID":one["id_local"],"file_name":one["baseName"],"set_id":collection[0],"order_in_set":idx})
-            photoDB.commit();
+                photoDB.addPhoto({"ID":auto_id,"photo_id":one["id_local"],"file_name":one["baseName"],"set_id":collection[0],"order_in_set":idx})
+                auto_id=auto_id+1
+        photoDB.commit();
             ### Save the resultList into new db and do stuff
 
 if __name__=="__main__":

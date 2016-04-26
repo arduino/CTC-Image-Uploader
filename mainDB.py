@@ -5,13 +5,14 @@ db_file="maindb.db"
 class CTCPhotoDB:
 	def __init__(self):
 		self.conn=sqlite3.connect(db_file)
-		self.conn.row_factory = sqlite3.Row
+		#self.conn.row_factory = sqlite3.Row
 		self.cursor=self.conn.cursor()
 
 	def createTables(self):
 		cmds=['''
 		CREATE TABLE IF NOT EXISTS photos(
 			ID PRIMARY KEY,
+			photo_id CHAR(15),
 			file_name CHAR(50),
 			set_id INT,
 			order_in_set INT,
@@ -47,6 +48,7 @@ class CTCPhotoDB:
 	def addPhoto(self,pack):
 		basePack={
 			"ID":"",
+			"photo_id":"",
 			"file_name":"",
 			"set_id":"",
 			"order_in_set":-1,
@@ -59,7 +61,7 @@ class CTCPhotoDB:
 		ipt=self.updatedInput(basePack,pack)
 		cmd='''
 		INSERT OR IGNORE INTO photos VALUES
-		('{ID}','{file_name}','{set_id}',{order_in_set},'{hosted_url}','{hosted_id}','{refering_url}','{last_updated}',{synced})
+		('{ID}','{photo_id}','{file_name}','{set_id}',{order_in_set},'{hosted_url}','{hosted_id}','{refering_url}','{last_updated}',{synced})
 		'''.format(**ipt)
 
 		#print cmd
