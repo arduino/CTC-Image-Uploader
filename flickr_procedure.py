@@ -7,46 +7,17 @@ from mainDB import CTCPhotoDB
 flickr_api_key = u'c1b9a319a2e25dbcd49ca1eea44a5990'
 flickr_api_secret = u'f4b371ff599357ed'
 
+f = flickrapi.FlickrAPI(flickr_api_key, flickr_api_secret)
+
 upload_queue=Queue.Queue()
 upload_workers=[]
+
+db_queue=Queue.Queue()
+
 db=CTCPhotoDB()
 
-'''
-def main():
-	uploadPictures()
-	createPhotoSets()
-	addPicsToSets()
-	orderPics()
-'''
-
-def saveFlickrID(rec,flickr_id):
-	db.setPhotoHostedID(rec["ID"],flickr_id)
-
-def createPhotoSet(set_id,setName):
-	#res=f.photosets.create(title=setName)
-	#db.modifySetByID(id=set_id, hosted_url=res.attrib["id"])
-	db.modifySetByID(set_id=set_id, hosted_url="bla")
-
-def createPhotoSets():
-	#create photosets in flickr
-	photoSets=db.getAllSets()
-	print photoSets
-	for one in photoSets:
-		#print type(one)
-		createPhotoSet(one["set_id"],one["name"])
-	#db.commit()
 
 
-def getFilenameFromRec(rec):
-	baseName=rec["file_name"]
-	setName=db.getSetByID(rec['set_id'])["name"]
-	filename=""
-	try:
-		filename=getFilename(baseName,setName)
-	except Exception as e:
-		pass
-		#print e
-	return filename
 
 def getFilename(baseName,setName):
 	filename_woExt="./data/images/"+setName.replace(" ","_")+"/"+baseName
@@ -60,8 +31,67 @@ def getFilename(baseName,setName):
 		raise Exception(filename_woExt+" does not exist")
 	return filename
 
+def getFilenameFromRec(rec):
+	baseName=rec["file_name"]
+	setName=db.getSetByID(rec['set_id'])["name"]
+	filename=""
+	try:
+		filename=getFilename(baseName,setName)
+	except Exception as e:
+		pass
+		#print e
+	return filename
+
+
+
+
+
+def uploadPhoto(index, queue):
+	while True:
+		task=queue.get()
+		filename=task["filename"]
+		rec=task["rec"]
+		print "worker {} uploading {}".format(index,filename)
+		res=f.upload(filename,title=rec["file_name"])
+		photoid=res.find("photoid").text
+		print photoid
+		db_queue.put({"rec":rec,"photoid":photoid})
+		#print photoid
+		#time.sleep(2)
+		queue.task_done()
+
+def createUploadWorkers(num):
+	for i in range(num):
+		worker=threading.Thread(target=uploadPhoto, args=(i,upload_queue))
+		worker.setDaemon(True)
+		upload_workers.append(worker)
+		worker.start()
+
+
+
+
+def saveFlickrID(rec,flickr_id):
+	print rec["photo_id"],flickr_id
+	db.setPhotoHostedID(rec["photo_id"],flickr_id)
+
+def main_dbWork(queue):
+	while True:
+		try:
+			#print queue.qsize()
+			task=queue.get(False)
+		except Queue.Empty:
+			break
+		rec=task["rec"]
+		photoid=task["photoid"]
+		print "recording {}".format(photoid)
+		saveFlickrID(rec,photoid)
+
+
+
+
 def uploadPictures():
-	createWorkers(5)
+	createUploadWorkers(5)
+	#createDBWorker()
 
 	pics=db.getAllPhotos()
 	#pics=db.getPhotosBySetID(683635)
@@ -73,44 +103,19 @@ def uploadPictures():
 		if filename=="":
 			continue
 		
-		#print filename
-
 		#wait while upload_queue is processed
-		while upload_queue.qsize()>100:
-			pass
+		while True:
+			main_dbWork(db_queue)
+			if upload_queue.qsize()<100:
+				break
 		upload_queue.put({"filename":filename,"rec":one})
 
 	upload_queue.join()
-
-def createWorkers(num):
-	for i in range(num):
-		worker=threading.Thread(target=uploadPhoto, args=(i,upload_queue))
-		worker.setDaemon(True)
-		upload_workers.append(worker)
-		worker.start()
-
-def uploadPhoto(index, queue):
-	global f
-	#res=f.upload(filename="data/images/block_2-3_fencing/block_2-3_fencing_step-1.png")
-	#print res.find("photoid").text
-	while True:
-		task=queue.get()
-		filename=task["filename"]
-		rec=task["rec"]
-		print "worker {} uploading {}".format(index,filename)
-		res=f.upload(filename,title=rec["file_name"])
-		photoid=res.find("photoid").text
-		print photoid
-		#saveFlickrID(rec,photoid)
-		#time.sleep(2)
-		#f.photos.delete(photo_id=photoid)
-		queue.task_done()
+	main_dbWork(db_queue)
 
 
 
 if __name__=="__main__":
-	global f
-	f = flickrapi.FlickrAPI(flickr_api_key, flickr_api_secret)
 	f.authenticate_via_browser(perms='delete')
 
 	#createPhotoSets()
