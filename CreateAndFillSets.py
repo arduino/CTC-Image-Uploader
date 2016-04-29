@@ -1,3 +1,16 @@
+#
+#	synced value of photos:
+# 0: unsynced 
+# synced & 1 == 1: uploaded
+# synced & 2 == 2: added to flickr set
+# synced & 4 == 4: bitly link set
+#
+# state value of sets:
+# 0: not created 
+# 1: created
+# 2: ordered
+#
+
 import sqlite3
 import flickrapi
 
@@ -19,15 +32,15 @@ def getSetsInfoForCreateInFlickr():
 	SELECT sets.set_id, sets.name, photos.hosted_id as photoHid
 	FROM photos INNER JOIN sets
 	on photos.set_id == sets.set_id
-	WHERE photos.order_in_set==0 AND photos.synced==1 AND sets.state==0
+	WHERE photos.order_in_set==0 AND photos.synced & 1 == 1 AND sets.state==0
 	'''
 	res=db.makeQuery(cmd)
 	return res[0]
 
 def createFlickrSet(rec):
 	res=f.photosets.create(title=rec["name"],primary_photo_id=rec["photoHid"])
-	FlickrSetID=res.attrib["id"]
-	db.modifySetByID(rec["set_id"], hosted_id=FlickrSetID, state=1)
+	FlickrSetID=res.find("photoset").attrib["id"]
+	db.modifySetByID(rec["set_id"], hosted_id=FlickrSetID, state=1).commit()
 
 def createFlickrSets():
 	res=getSetsInfoForCreateInFlickr().fetchall()
@@ -47,7 +60,7 @@ def getPhotosInfoForAddingToSetsInFlickr():
 	SELECT photos.photo_id, photos.hosted_id as photoHid, sets.set_id, sets.hosted_id as setHid
 	FROM photos INNER JOIN sets
 	on photos.set_id == sets.set_id
-	WHERE sets.state==1 AND photos.synced==1
+	WHERE sets.state==1 AND photos.synced & 2 == 0 AND photos.synced & 1 == 1
 	'''
 	res=db.makeQuery(cmd)
 	return res[0]
@@ -59,7 +72,11 @@ def addPhotoToFlickrSet(rec):
 		db.modifyPhotoSynced(rec["photo_id"], 2, rec["set_id"])
 		print "added: ",rec["photoHid"],rec["setHid"]
 	except flickrapi.exceptions.FlickrError as e:
-		print e,rec["photoHid"],rec["setHid"]
+		if e.code==3:
+			db.modifyPhotoSynced(rec["photo_id"], 2, rec["set_id"])
+			print "added: ",rec["photoHid"],rec["setHid"]
+		else:
+			print e,rec["photoHid"],rec["setHid"]
 
 
 def addPhotosToFlickrSets():
@@ -77,12 +94,12 @@ def addPhotosToFlickrSets():
 #
 def getAllFullyUploadedSets():
 	cmd='''
-	SELECT photos.set_id
+	SELECT sets.hosted_id, sets.set_id
 	FROM photos JOIN sets ON photos.set_id==sets.set_id
 	WHERE sets.state==1
 	GROUP BY photos.set_id
-	--HAVING COUNT(case when photos.synced<2 then 1 else null end)==0
-	HAVING COUNT(case when photos.synced>0 then 1 else null end)!=0
+	--HAVING COUNT(case when photos.synced & 2 == 0 then 1 else null end)==0
+	HAVING COUNT(case when photos.synced & 2 == 2 then 1 else null end)==3
 	'''
 	res=db.makeQuery(cmd)
 	return res[0]
@@ -91,7 +108,7 @@ def getOrderedPhotosInSet(set_id):
 	cmd='''
 	SELECT hosted_id
 	FROM photos
-	WHERE set_id=='{}'
+	WHERE set_id=='{}' AND synced & 2 ==2
 	ORDER BY order_in_set
 	'''.format(set_id)
 	res=db.makeQuery(cmd)
@@ -99,11 +116,10 @@ def getOrderedPhotosInSet(set_id):
 
 def orderFlickrSet(rec):
 	photos=getOrderedPhotosInSet(rec["set_id"]).fetchall()
-	photoIDs=[i[0] for i in photos]
-	print rec["set_id"], photoIDs, len(photoIDs)
-	#f.photoset.reorderPhotos(photoset_id=rec["set_id"],photo_ids=photoIDs)
-	#db.modifySetByID(rec["set_id"],state=1)
-	#db.commit()
+	photoHIDs=",".join([i["hosted_id"] for i in photos])
+	f.photosets.reorderPhotos(photoset_id=rec["hosted_id"],photo_ids=photoHIDs)
+	db.modifySetByID(rec["set_id"],state=2).commit()
+	print "ordered: ",rec["hosted_id"]
 
 def orderFlickrSets():
 	res=getAllFullyUploadedSets().fetchall()
@@ -111,6 +127,6 @@ def orderFlickrSets():
 		orderFlickrSet(one)
 
 if __name__=="__main__":
-	#createFlickrSets()
+	createFlickrSets()
 	addPhotosToFlickrSets()
-	#orderFlickrSets()
+	orderFlickrSets()

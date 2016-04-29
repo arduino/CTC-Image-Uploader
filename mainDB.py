@@ -81,7 +81,7 @@ class CTCPhotoDB:
 	def modifyPhotoSynced(self,photo_id,synced, set_id=False):
 		cmd='''
 		UPDATE photos
-		SET synced={synced}
+		SET synced= synced | {synced}
 		WHERE photo_id = '{photo_id}'
 		'''.format(**locals())
 		if set_id:
