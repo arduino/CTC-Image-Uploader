@@ -22,10 +22,18 @@ flickr_api_secret = u'f4b371ff599357ed'
 db=CTCPhotoDB()
 
 f = flickrapi.FlickrAPI(flickr_api_key, flickr_api_secret)
+
+
+
+
 #
 #
-#	createFlickrSets
+#	createFlickrSets: Flickr doens not allow creating empty photo sets. So
+#	a set can only be created if there's a picture of it already uploaded.
 #
+#	1. Get all the sets that are not created in Flickr, whose photo no.1 is uploaded
+#	2. Created the Flickr sets
+#	3. Update their status to created 
 #
 def getSetsInfoForCreateInFlickr():
 	cmd='''
@@ -54,6 +62,9 @@ def createFlickrSets():
 #
 #	addPhotosToFlickrSets
 #
+#	1. Find all the photos whose sets are created in Flickr, and themselves uploaded(but not added)
+#	2. Add the photos to the Flickr set
+#	3. Update the db to keep track of the status
 #
 def getPhotosInfoForAddingToSetsInFlickr():
 	cmd='''
@@ -72,7 +83,7 @@ def addPhotoToFlickrSet(rec):
 		db.modifyPhotoSynced(rec["photo_id"], 2, rec["set_id"])
 		print "added: ",rec["photoHid"],rec["setHid"]
 	except flickrapi.exceptions.FlickrError as e:
-		if e.code==3:
+		if e.code==3:	#
 			db.modifyPhotoSynced(rec["photo_id"], 2, rec["set_id"])
 			print "added: ",rec["photoHid"],rec["setHid"]
 		else:
@@ -89,8 +100,11 @@ def addPhotosToFlickrSets():
 
 #
 #
+#	Order the sets in Flickr collection
 #
-#
+#	1. Get all the sets that are fully uploaded. You can't put orders on pictures that are not uploaded
+#	2. For each one of the sets, get their local orders.
+#	3. Order the Flickr set with the order 
 #
 def getAllFullyUploadedSets():
 	cmd='''
@@ -98,8 +112,8 @@ def getAllFullyUploadedSets():
 	FROM photos JOIN sets ON photos.set_id==sets.set_id
 	WHERE sets.state==1
 	GROUP BY photos.set_id
-	--HAVING COUNT(case when photos.synced & 2 == 0 then 1 else null end)==0
-	HAVING COUNT(case when photos.synced & 2 == 2 then 1 else null end)==3
+	HAVING COUNT(case when photos.synced & 2 == 0 then 1 else null end)==0
+	--This is a test HAVING COUNT(case when photos.synced & 2 == 2 then 1 else null end)==3
 	'''
 	res=db.makeQuery(cmd)
 	return res[0]
@@ -126,7 +140,21 @@ def orderFlickrSets():
 	for one in res:
 		orderFlickrSet(one)
 
-if __name__=="__main__":
+
+#
+#	
+#	Main procedure
+#	1. Create the Flickr sets
+#	2. Add photos to the sets
+#	3. When all photos are added to sets, order them
+#
+#	All scripts will run the parts of data they can work on. If the data is not workable,
+#	It'll stop safely 
+#
+def main():
 	createFlickrSets()
 	addPhotosToFlickrSets()
 	orderFlickrSets()
+
+if __name__=="__main__":
+	main()
