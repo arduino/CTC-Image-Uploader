@@ -187,7 +187,7 @@ def foot1(canvas,doc):
 def foot2(canvas,doc):
     canvas.saveState()
     canvas.setFont('Helvetica',12)
-    canvas.drawString(inch, 0.75 * inch, "Page %d - these images are property of Arduino Verkstad AB - CONFIDENTIAL" % doc.page)
+    canvas.drawString(inch, 0.75 * inch, "Page %d - these images are property of Arduino LLC - CONFIDENTIAL" % doc.page)
     canvas.restoreState()
 
 def get_image(path, width=1*cm):
@@ -547,7 +547,7 @@ def renderCollectionPDF(filepathLogo,reportName,setName,collectionName,listCTCpi
 
     # closing page
     Elements.append(Paragraph("Disclaimer: ",styles['title']))
-    Elements.append(Paragraph("This document is property of Arduino Verkstad AB and it is confidential. If you found this document please send it to: <br /><b>Arduino Verkstad AB</b><br />Anckargripsgatan 3<br />21119 Malmo<br />Sweden",styles['paragraph']))
+    Elements.append(Paragraph("This document is property of Arduino LLC and it is confidential. If you found this document please send it to: <br /><b>Arduino Verkstad AB</b><br />Anckargripsgatan 3<br />21119 Malmo<br />Sweden",styles['paragraph']))
     Elements.append(Paragraph("The contents of this document cannot be shared under no circumstances. If you are working under a contract for Arduino Verkstad AB, you are NOT entitled to share this information with anyone.",styles['paragraph']))
     doc.addPageTemplates([PageTemplate(id='OneCol',frames=frameT,onPage=foot1), PageTemplate(id='TwoCol',frames=[frame3,frame4,frame1,frame2],onPage=foot2), ])
 
