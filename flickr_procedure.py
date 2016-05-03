@@ -4,6 +4,9 @@ import time, os
 
 from mainDB import CTCPhotoDB
 
+from CreateAndFillSets import CreateAndFillSets
+from fetchURLAndGenShortLink import fetchURLAndGenShortLink
+
 flickr_api_key = u'c1b9a319a2e25dbcd49ca1eea44a5990'
 flickr_api_secret = u'f4b371ff599357ed'
 
@@ -116,7 +119,7 @@ def uploadPictures():
 	#createDBWorker()
 
 	pics=db.getAllPhotos()
-	#pics=db.getPhotosBySetID(683635)
+	print len(pics), "pictures in total"
 	for one in pics:
 		if one["synced"]:
 			continue
@@ -130,6 +133,8 @@ def uploadPictures():
 			main_dbWork(db_queue)
 			if upload_queue.qsize()<100:
 				break
+
+		print filename, "will be uploaded"
 		upload_queue.put({"filename":filename,"rec":one})
 
 	upload_queue.join()
@@ -140,8 +145,15 @@ def uploadPictures():
 if __name__=="__main__":
 	f.authenticate_via_browser(perms='delete')
 
-	#createPhotoSets()
 	uploadPictures()
+	print("all pictures Uploaded")
+
+	CreateAndFillSets()
+	print("All Sets created and filled")
+
+	fetchURLAndGenShortLink()
+	print("All hosted URLs saved, short links created")
+
 	#saveFlickrID({"ID":"684889"},"wttf")
 	#res=f.photos.getInfo(photo_id="16754246842")
 	#for one in res.find("photo"):

@@ -49,6 +49,7 @@ def createFlickrSet(rec):
 	res=f.photosets.create(title=rec["name"],primary_photo_id=rec["photoHid"])
 	FlickrSetID=res.find("photoset").attrib["id"]
 	db.modifySetByID(rec["set_id"], hosted_id=FlickrSetID, state=1).commit()
+	print "Hosted photoset created: ",rec["name"]
 
 def createFlickrSets():
 	res=getSetsInfoForCreateInFlickr().fetchall()
@@ -80,15 +81,12 @@ def addPhotoToFlickrSet(rec):
 	#set photos.synced to 2 once added to flickr set
 	try:
 		f.photosets.addPhoto(photoset_id=rec["setHid"], photo_id=rec["photoHid"])
-		db.modifyPhotoSynced(rec["photo_id"], 2, rec["set_id"])
-		print "added: ",rec["photoHid"],rec["setHid"]
 	except flickrapi.exceptions.FlickrError as e:
-		if e.code==3:	#
-			db.modifyPhotoSynced(rec["photo_id"], 2, rec["set_id"])
-			print "added: ",rec["photoHid"],rec["setHid"]
-		else:
+		if e.code!=3:	#code 3: already in set. Often because it's the primary photo of the set.
 			print e,rec["photoHid"],rec["setHid"]
-
+			return 0
+	db.modifyPhotoSynced(rec["photo_id"], 2, rec["set_id"])
+	print "added to set: ",rec["photoHid"],rec["setHid"]
 
 def addPhotosToFlickrSets():
 	res=getPhotosInfoForAddingToSetsInFlickr().fetchall()
@@ -151,10 +149,10 @@ def orderFlickrSets():
 #	All scripts will run the parts of data they can work on. If the data is not workable,
 #	It'll stop safely 
 #
-def main():
+def CreateAndFillSets():
 	createFlickrSets()
 	addPhotosToFlickrSets()
 	orderFlickrSets()
 
 if __name__=="__main__":
-	main()
+	CreateAndFillSets()

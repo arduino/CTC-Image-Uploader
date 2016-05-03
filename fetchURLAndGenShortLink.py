@@ -104,7 +104,7 @@ def mainDBWork():
 #
 #	TO-DO: Add short urls into workflow
 #
-def main():
+def fetchURLAndGenShortLink():
 	for one in getPhotosHIDForFlickr():
 		#print one
 		photos_list.put(one)
@@ -117,4 +117,4 @@ def main():
 	mainDBWork()
 
 if __name__=="__main__":
-	main()
+	fetchURLAndGenShortLink()
