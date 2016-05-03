@@ -18,7 +18,12 @@ db=CTCPhotoDB()
 
 
 
-
+#
+#
+#	Utility for getting path to a file based on db record.
+#	It checks if the file exists
+#
+#
 def getFilename(baseName,setName):
 	filename_woExt="./data/images/"+setName.replace(" ","_")+"/"+baseName
 	filename=""
@@ -38,14 +43,19 @@ def getFilenameFromRec(rec):
 	try:
 		filename=getFilename(baseName,setName)
 	except Exception as e:
-		pass
+		pass #Ignoring non-exisiting files, since most files don't exist 
 		#print e
 	return filename
 
 
 
 
-
+#
+#
+#	Worker threads for uploading a picture.
+#	1. Find out the file of the picture to be uploaded
+#	2. Upload the file, and give the Flickr ID to the main thread for saving
+#
 def uploadPhoto(index, queue):
 	while True:
 		task=queue.get()
@@ -69,7 +79,11 @@ def createUploadWorkers(num):
 
 
 
-
+#
+#
+#	In main thread, save the status and flickr ID of photos that has been uploaded
+#
+#
 def saveFlickrID(rec,flickr_id):
 	print rec["photo_id"],flickr_id
 	db.setPhotoHostedID(rec["photo_id"],flickr_id)
@@ -87,8 +101,16 @@ def main_dbWork(queue):
 		saveFlickrID(rec,photoid)
 
 
-
-
+#
+#	
+#	Upload all pictures to flickr
+#	1. Create worker threads for uploading
+#	2. Get all records of photos that need to be uploaded
+#	3. Don't upload if the file is already uploaded, or file does not exist
+#	4. Wait if the upload queue is too long
+#	5. Add task to upload queue
+#	6. Save the status of uploaded pictures to db
+#
 def uploadPictures():
 	createUploadWorkers(5)
 	#createDBWorker()
