@@ -124,7 +124,7 @@ class CTCPhotoDB:
 
 	def getPhotosBySetID(self,set_id):
 		res=self.getRecByField("photos","set_id",set_id)
-		return res
+		return res.fetchall()
 
 	def getRecByField(self, tb_name,field_name,value):
 		cmd="SELECT * FROM {tb_name} WHERE {field_name}='{value}'".format(**locals())

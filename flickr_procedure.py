@@ -39,7 +39,7 @@ def getFilename(baseName,setName):
 		raise Exception(filename_woExt+" does not exist")
 	return filename
 
-def getFilenameFromRec(rec):
+def getFilenameFromRec(rec,db=db):
 	baseName=rec["file_name"]
 	setName=db.getSetByID(rec['set_id'])["name"]
 	filename=""
