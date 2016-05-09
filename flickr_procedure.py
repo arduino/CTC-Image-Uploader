@@ -41,7 +41,11 @@ def getFilename(baseName,setName):
 
 def getFilenameFromRec(rec,db=db):
 	baseName=rec["file_name"]
-	setName=db.getSetByID(rec['set_id'])["name"]
+	if rec["folder"]:
+		field="folder"
+	else:
+		field="set_id"
+	setName=db.getSetByID(rec[field])["name"]
 	filename=""
 	try:
 		filename=getFilename(baseName,setName)
@@ -51,6 +55,31 @@ def getFilenameFromRec(rec,db=db):
 	return filename
 
 
+#
+#	Specify folder location for linked pictures
+#	If a picture is used in more than one sets, set the file location
+#	to the one that's existing.
+#
+#
+# "folder" field is used for photo records reusing the same file location
+# When mutiple photos are linking to the same folder, the folder value
+# will be replaced by the set_id of the one physically exisits. 
+#
+# i.e. if there are 2 records of the same image in different sets:  
+#       photo_id    file_name   set_id  folder
+#       740853      P5620073    683635  
+#       740853      P5620073    683605  
+# 
+#	if when uploading files, it is found out that the first has a file associated
+# both of their folder will be replaced with 683635
+#
+def saveSetIDToFolder(rec):
+	cmd="""
+	UPDATE photos
+	SET folder={}
+	WHERE photo_id=={}
+	""".format(rec["set_id"],rec["photo_id"])
+	db.makeQuery(cmd)[1].commit()
 
 
 #
@@ -68,7 +97,7 @@ def uploadPhoto(index, queue):
 		res=f.upload(filename,title=rec["file_name"])
 		photoid=res.find("photoid").text
 		print photoid
-		db_queue.put({"rec":rec,"photoid":photoid})
+		db_queue.put({"taskName":"saveFlickrID","rec":rec,"photoid":photoid})
 		#print photoid
 		#time.sleep(2)
 		queue.task_done()
@@ -98,21 +127,25 @@ def main_dbWork(queue):
 			task=queue.get(False)
 		except Queue.Empty:
 			break
-		rec=task["rec"]
-		photoid=task["photoid"]
-		print "recording {}".format(photoid)
-		saveFlickrID(rec,photoid)
 
+		rec=task["rec"]
+		if task["taskName"]=="saveFlickrID":
+			photoid=task["photoid"]
+			print "recording {}".format(photoid)
+			saveFlickrID(rec,photoid)
+		elif task["taskName"]=="saveSetIDToFolder":
+			saveSetIDToFolder(rec)
 
 #
 #	
 #	Upload all pictures to flickr
 #	1. Create worker threads for uploading
 #	2. Get all records of photos that need to be uploaded
-#	3. Don't upload if the file is already uploaded, or file does not exist
-#	4. Wait if the upload queue is too long
-#	5. Add task to upload queue
-#	6. Save the status of uploaded pictures to db
+#	3. Specify the folder location if not set
+#	4. Don't upload if the file is already uploaded, or file does not exist
+#	5. Wait if the upload queue is too long
+#	6. Add task to upload queue
+#	7. Save the status of uploaded pictures to db
 #
 def uploadPictures():
 	createUploadWorkers(5)
@@ -128,6 +161,9 @@ def uploadPictures():
 		if filename=="":
 			continue
 		
+		if one["folder"]=="":
+			db_queue.put({"taskName":"saveSetIDToFolder","rec":one})
+
 		#wait while upload_queue is processed
 		while True:
 			main_dbWork(db_queue)
@@ -153,11 +189,4 @@ if __name__=="__main__":
 
 	fetchURLAndGenShortLink()
 	print("All hosted URLs saved, short links created")
-
-	#saveFlickrID({"ID":"684889"},"wttf")
-	#res=f.photos.getInfo(photo_id="16754246842")
-	#for one in res.find("photo"):
-	#	print one
-	#print res.find("photo").find("title").text
-	#f.photos.delete(photo_id=res.find("photoid").text)
 

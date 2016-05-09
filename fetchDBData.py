@@ -21,6 +21,8 @@ idExclude = "671489"
 # verbose level
 ver = 0
 
+photoDB=CTCPhotoDB()
+
 
 ##################################
 
@@ -67,7 +69,6 @@ def combineLists(list1,list2):
     return resultList
 
 def extractAndPopulate():
-    photoDB=CTCPhotoDB()
 
     ## The Loop that will look into the DB
     with sqlite3.connect(filename) as conn:
@@ -115,6 +116,7 @@ def extractAndPopulate():
                 auto_id=auto_id+1
         photoDB.commit();
             ### Save the resultList into new db and do stuff
+
 
 if __name__=="__main__":
     extractAndPopulate()

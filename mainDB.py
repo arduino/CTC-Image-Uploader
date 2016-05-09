@@ -15,6 +15,7 @@ class CTCPhotoDB:
 			photo_id CHAR(15),
 			file_name CHAR(50),
 			set_id INT,
+			folder INT,
 			order_in_set INT,
 			hosted_url CHAR(255),
 			hosted_id CHAR(15),
@@ -52,6 +53,7 @@ class CTCPhotoDB:
 			"photo_id":"",
 			"file_name":"",
 			"set_id":"",
+			"folder":"",
 			"order_in_set":-1,
 			"hosted_url":"",
 			"hosted_id":"",
@@ -62,7 +64,7 @@ class CTCPhotoDB:
 		ipt=self.updatedInput(basePack,pack)
 		cmd='''
 		INSERT OR IGNORE INTO photos VALUES
-		('{ID}','{photo_id}','{file_name}','{set_id}',{order_in_set},'{hosted_url}','{hosted_id}','{refering_url}','{last_updated}',{synced})
+		('{ID}','{photo_id}','{file_name}','{set_id}','{folder}',{order_in_set},'{hosted_url}','{hosted_id}','{refering_url}','{last_updated}',{synced})
 		'''.format(**ipt)
 
 		#print cmd
