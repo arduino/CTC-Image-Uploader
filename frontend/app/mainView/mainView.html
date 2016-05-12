@@ -1,0 +1,14 @@
+{{photoSets.length}}
+<div>
+	<div class="photo-set" ng-class="{created:pSet.state}" ng-repeat="pSet in photoSets">
+		<a ng-click="displaySet(pSet)" href="">
+			<h2>{{pSet.title}}</h2>
+		</a>
+		<div ng-show="pSet.expanded">
+			<div ng-repeat="photo in photos[pSet.set_id]">
+				<span>{{photo.title}}</span>
+				<span><img ng-src="{{photo.local_src}}" width="300px"/></span>
+			</div>
+		</div>
+	</div>
+</div>
