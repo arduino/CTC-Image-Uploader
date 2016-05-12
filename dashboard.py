@@ -9,7 +9,7 @@ from tornado.ioloop import IOLoop
 from mainDB import CTCPhotoDB
 from flickr_procedure import getFilenameFromRec
 
-app = Flask(__name__,static_folder="frontend")
+app = Flask(__name__,static_url_path="", static_folder="frontend/app")
 app.debug=True
 
 @app.template_filter("imgPath")
@@ -22,7 +22,8 @@ def getImgPath(rec):
 def base_static(filename):
     return send_from_directory(app.root_path + '/data/', filename)
 '''
-@app.route('/')
+
+#@app.route('/')
 def hello_world():
 	global db
 	db=CTCPhotoDB()
@@ -34,7 +35,11 @@ def hello_world():
 		records.append(record)
 	return render_template("testMainTemplate.html",records=records)
 
-'''
+@app.route('/')
+def mainView():
+	return render_template("index.html")
+
+
 if __name__ == '__main__':
 	app.run(host="0.0.0.0",threaded=True)
 '''
@@ -43,3 +48,4 @@ if __name__ == '__main__':
   http_server = HTTPServer(WSGIContainer(app))
   http_server.listen(5000)
   IOLoop.instance().start()
+'''
