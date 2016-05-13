@@ -5,10 +5,25 @@
 			<h2>{{pSet.title}}</h2>
 		</a>
 		<div ng-show="pSet.expanded">
-			<div ng-repeat="photo in photos[pSet.set_id]">
-				<span>{{photo.title}}</span>
-				<span><img ng-src="{{photo.local_src}}" width="300px"/></span>
-			</div>
+			<table>
+				<thead>
+					<tr>
+						<td>title</td>
+						<td>local</td>
+						<td>hosted</td>
+						<td>synced</td>
+					</tr>
+				</thead>
+				<tbody>
+					<tr ng-repeat="photo in photos[pSet.set_id]">
+						<td>{{photo.title}}</td>
+						<td><img ng-src="{{photo.local_src}}" width="100px"/></td>
+						<td><img ng-src="{{photo.hosted_src}}" width="100px"/></td>
+						<td>{{photo.synced}}</td>
+					</tr>
+				</tbody>
+			
+			</table>
 		</div>
 	</div>
 </div>

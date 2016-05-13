@@ -21,7 +21,6 @@ angular.module('myApp.mainView', ['ngRoute'])
 
 		$scope.displaySet=function(photoSet){
 			var set_id=photoSet.set_id;
-			console.log(photoSet.expanded);
 			if(typeof $scope.photos[set_id]!="undefined"){
 				photoSet.expanded=!photoSet.expanded;
 				return 0;
@@ -29,9 +28,15 @@ angular.module('myApp.mainView', ['ngRoute'])
 
 			$http.get("/photosets/"+set_id).success(function(data){
 				$scope.photos[set_id]=data["photos"];
-				console.log($scope.photos);
+				//console.log($scope.photos);
 				photoSet.expanded=!photoSet.expanded;
 			})
 		}
 	}]
 );
+/*
+.filter("thumbnail",[
+	function(url){
+		url.replace("z.jpg","t.jpg");
+	}
+]);*/
