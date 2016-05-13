@@ -56,11 +56,11 @@ def getImgPath(rec):
 	global db
 	return getFilenameFromRec(rec,db)
 
-'''
-@app.route('/<path:filename>')
+@app.route('/data/<path:filename>')
 def base_static(filename):
-    return send_from_directory(app.root_path + '/data/', filename)
-'''
+	#print filename
+	return send_from_directory(app.root_path + '/data/', filename)
+
 
 #@app.route('/')
 def hello_world():
