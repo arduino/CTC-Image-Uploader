@@ -1,7 +1,8 @@
 import sqlite3, Queue, threading
 import flickrapi
+import time
 
-from configs import flickr_api_key, flickr_api_secret
+from configs import flickr_api_key, flickr_api_secret, yourls_signature
 from mainDB import CTCPhotoDB
 
 
@@ -92,6 +93,16 @@ def mainDBWork():
 			break
 		#print task["photo_id"], task["hosted_url"]
 		saveFlickrURL(task)
+
+
+
+def connectToShortener():
+	ct=int(time.time())
+	#sign=
+
+
+def getShortURL():
+	pass
 
 
 #
