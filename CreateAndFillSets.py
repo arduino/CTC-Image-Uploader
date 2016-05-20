@@ -14,10 +14,9 @@
 import sqlite3
 import flickrapi
 
+from configs import flickr_api_key, flickr_api_secret
 from mainDB import CTCPhotoDB
 
-flickr_api_key = u'c1b9a319a2e25dbcd49ca1eea44a5990'
-flickr_api_secret = u'f4b371ff599357ed'
 
 db=CTCPhotoDB()
 
