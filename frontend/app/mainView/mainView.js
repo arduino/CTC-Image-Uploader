@@ -33,10 +33,13 @@ angular.module('myApp.mainView', ['ngRoute'])
 			})
 		}
 	}]
-);
-/*
-.filter("thumbnail",[
-	function(url){
-		url.replace("z.jpg","t.jpg");
+)
+
+.filter("thumbnail",[function(){
+	return function(url){
+		if(typeof(url)==="undefined")
+			return url;
+
+		return url.replace("z.jpg","t.jpg");
 	}
-]);*/
+}]);
