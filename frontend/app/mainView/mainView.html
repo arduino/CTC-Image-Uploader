@@ -1,11 +1,10 @@
-{{photoSets.length}}
 <div>
-	<div class="photo-set" ng-class="{created:pSet.state}" ng-repeat="pSet in photoSets">
+	<div class="photo-set" ng-class="{created:pSet.state}" ng-repeat="pSet in photoSets" ng-init="pts=pSet.set_id;">
 		<a ng-click="displaySet(pSet)" href="">
-			<h2>{{pSet.title}}</h2>
+			<h2>{{pSet.title}} {{photos[pts].length}} {{(photos[pts] | filter:{synced:3}).length}}</h2>
 		</a>
-		<div ng-show="pSet.expanded">
-			<table>
+		<div ng-show="pSet.expanded" >
+			<table ng-if="photos[pts].length">
 				<thead>
 					<tr>
 						<td>title</td>
@@ -15,15 +14,16 @@
 					</tr>
 				</thead>
 				<tbody>
-					<tr ng-repeat="photo in photos[pSet.set_id]">
+					<tr ng-repeat="photo in photos[pts]">
 						<td>{{photo.title}}</td>
 						<td><img ng-src="{{photo.local_src}}" width="100px"/></td>
-						<td><img ng-src="{{photo.hosted_src}}" width="100px"/></td>
+						<td><img ng-src="{{photo.hosted_src | thumbnail}}" width="100px"/></td>
 						<td>{{photo.synced}}</td>
 					</tr>
 				</tbody>
 			
 			</table>
+			<div ng-if="!photos[pts].length">Empty</div>
 		</div>
 	</div>
 </div>
