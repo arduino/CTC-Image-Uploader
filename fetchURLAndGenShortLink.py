@@ -84,9 +84,8 @@ def createWorkers(num,target,queue):
 
 #
 #	main thread worker, saves data into db.
-#	It should save: Flickr URL and shorterned URL
+#	It saves: Flickr URL and shorterned URL
 #
-#	TO-DO: Save shorterned URL
 #
 def mainDBWork():
 	while True:
@@ -102,7 +101,11 @@ def mainDBWork():
 
 
 
-
+#
+#	Get all photo records from the db who needs 
+#	to have its hosted url shortened
+#
+#
 def getUnShortenedPhotos():
 	cmd='''
 	SELECT photos.photo_id, photos.hosted_url, photos.order_in_set, sets.name
@@ -113,6 +116,11 @@ def getUnShortenedPhotos():
 	'''
 	return db.makeQuery(cmd)[0].fetchall()
 
+#
+#	Get an authentication token for yourls, by
+# either generating it with the time or getting
+# an unexpired one
+#
 def getYourlsToken():
 	global yourlsTimer, signature
 	currentTime=time.time()
@@ -124,6 +132,11 @@ def getYourlsToken():
 
 	return signature, str(int(yourlsTimer))
 
+#
+#	Request short url from yourls by providing the 
+# long url, required short url and the identifying
+# title
+#
 def requestShortURL(longURL,keyword,title):
 	#global yourlsURL
 	url="{yourlsURL}/yourls-api.php?timestamp={timestamp}&signature={signature}&action={action}"
@@ -141,7 +154,15 @@ def requestShortURL(longURL,keyword,title):
 	})
 	return r.text
 
-
+#
+#	The whole process of using a record from photos
+#	table to get a short url. 
+#	
+#	There are a few scenarios of return value from 
+#	the yourls server. It can return nothing, something
+#	not relevant, not "status" field, "status" field 
+#	return False, or True.
+#
 def getShortURL(rec):
 	photo_id=rec["photo_id"]
 	hosted_url=rec["hosted_url"]
@@ -174,7 +195,10 @@ def getShortURL(rec):
 			print "Server error", res
 	return False
 
-
+#
+#	The whole process of using a record from
+#	photos table to get a short url. 
+#
 def urlShortenTask(index,queue):
 	while True:
 		task=queue.get()
@@ -184,9 +208,14 @@ def urlShortenTask(index,queue):
 			db_queue.put(toSave)
 		queue.task_done()
 
+#
+#	Actual DB work to save the short link
+#
 def saveShortLink(task):
 	db.setPhotoReferingURL(task["photo_id"],task["refering_url"])
 	print task["photo_id"]," shortened"
+
+
 
 
 #
@@ -194,10 +223,12 @@ def saveShortLink(task):
 #
 #	1. Get all records where urls need to be updated
 # 2. Create web workers to fetch urls from flickr
-# 3. Create web workers to generate short urls
-# 4. In main thread, save the urls to db 
+#	3. Get all records where short url needs to be generated
+# 4. Create web workers to generate short urls
+# 5. Wait for the urls to be fetched from flickr
+# 6. Wait for the short urls to be generated
+# 7. In main thread, save the urls to db 
 #
-#	TO-DO: Add short urls into workflow
 #
 def fetchURLAndGenShortLink():
 	for one in getPhotosHIDForFlickr():
