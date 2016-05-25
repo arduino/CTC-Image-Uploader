@@ -165,7 +165,7 @@ def getShortURL(rec):
 		if("status" in res):
 			if(res["status"]=="success"):
 				shortURL=res["shorturl"]
-				return (photo_id,shortURL)
+				return shortURL
 			else:
 				#Didn't successfully get the short URL
 				print res["message"]
@@ -180,7 +180,7 @@ def urlShortenTask(index,queue):
 		task=queue.get()
 		res=getShortURL(task)
 		if res:
-			toSave={"taskName":"saveShortLink","photo_id":res[0],"refering_url":res[1]}
+			toSave={"taskName":"saveShortLink","photo_id":task["photo_id"],"refering_url":res}
 			db_queue.put(toSave)
 		queue.task_done()
 
