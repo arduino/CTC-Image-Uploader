@@ -56,8 +56,7 @@ def getFlickrURL(rec):
 #
 #
 def saveFlickrURL(data):
-	db.modifyPhotoByID(data["photo_id"],hosted_url="'{}'".format(data["hosted_url"]))
-	db.commit()
+	db.setPhotoHostedURL(data["photo_id"],hosted_url=data["hosted_url"])
 	print data["photo_id"]," saved"
 
 #
@@ -184,6 +183,10 @@ def urlShortenTask(index,queue):
 			toSave={"taskName":"saveShortLink","photo_id":res[0],"refering_url":res[1]}
 			db_queue.put(toSave)
 		queue.task_done()
+
+def saveShortLink(task):
+	db.setPhotoReferingURL(task["photo_id"],task["refering_url"])
+	print task["photo_id"]," shortened"
 
 
 #
