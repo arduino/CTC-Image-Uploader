@@ -71,39 +71,56 @@ class CTCPhotoDB:
 
 		self.cursor.execute(cmd)
 
+
+
 	def modifySetByID(self, set_id, **kwargs):
-		return self.modifyRec("sets","set_id",set_id, kwargs)
+		set_id="'{}'".format(set_id)
+		return self.modifyRec("sets",{"set_id":set_id}, kwargs)
 
 	def modifySetState(self,set_id,state):
 		self.modifySetByID(set_id,state=state).commit()
 
-	def modifyPhotoByID(self, photo_id, **kwargs):
-		return self.modifyRec("photos","photo_id",photo_id, kwargs)
 
-	def modifyPhotoSynced(self,photo_id,synced, set_id=False):
-		cmd='''
-		UPDATE photos
-		SET synced= synced | {synced}
-		WHERE photo_id = '{photo_id}'
-		'''.format(**locals())
-		if set_id:
-			cmd=cmd.rstrip()+"AND set_id='{}'".format(set_id)
-		return self.makeQuery(cmd)[1].commit()
+
+	def modifyPhotoByID(self, photo_id, **kwargs):
+		photo_id="'{}'".format(photo_id)
+		return self.modifyRec("photos",{"photo_id":photo_id}, kwargs)
 
 	def setPhotoHostedID(self, photo_id, hosted_id):
 		hosted_id="'{}'".format(hosted_id)
-		self.modifyRec("photos","photo_id",photo_id,{"hosted_id":hosted_id,"synced":1}).commit()
+		self.modifyPhotoByID(photo_id,hosted_id=hosted_id,synced=1).commit()
+
+	def setPhotoHostedURL(self, photo_id, hosted_url):
+		hosted_url="'{}'".format(hosted_url)
+		self.modifyPhotoByID(photo_id,hosted_url=hosted_url).commit()
+
+	def setPhotoAddedToSet(self, photo_id, set_id):
+		photo_id="'{}'".format(photo_id)
+		set_id="'{}'".format(set_id)
+		self.modifyRec("photos",{"photo_id":photo_id,"set_id":set_id},{"synced":2}).commit()
+
+	def setPhotoReferingURL(self, photo_id, refering_url):
+		refering_url="'{}'".format(refering_url)
+		self.modifyPhotoByID(photo_id,refering_url=refering_url, synced=4).commit()
 
 
-	def modifyRec(self, tb_name, id_name, id_val, toModify):
+
+	def modifyRec(self, tb_name, where, toModify):
+		tmp=["{}={}".format(k,v) for (k,v) in where.items()]
+		where_list=" AND ".join(tmp)
+
+		if "synced" in toModify:
+			toModify["synced"]="synced|{}".format(toModify["synced"])
+
 		tmp=["{}={}".format(k,v) for (k,v) in toModify.items()]
 		update_list=",".join(tmp)
 
 		cmd='''
 		UPDATE {tb_name}
 		SET {update_list}
-		WHERE {id_name} = '{id_val}'
+		WHERE {where_list}
 		'''.format(**locals())
+		#print cmd
 		return self.makeQuery(cmd)[1]
 
 
@@ -152,6 +169,7 @@ if __name__=="__main__":
 	query=CTCPhotoDB()
 	query.createTables()
 	query.commit()
+
 	#query.addSet({"set_id":"234125","name":"Bla"})
 	#query.addSet({"name":"world"})
 	'''
@@ -163,3 +181,8 @@ if __name__=="__main__":
 		})
 	query.commit()
 	'''
+
+	#query.setPhotoHostedID(123456,234567)
+	#query.setPhotoHostedURL(123456,"http://flickr.com/abcd.jpg")
+	#query.setPhotoAddedToSet(123456,345)
+	#query.setPhotoReferingURL(123456,"http://vk.cc/yourls/bla")

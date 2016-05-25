@@ -84,7 +84,8 @@ def addPhotoToFlickrSet(rec):
 		if e.code!=3:	#code 3: already in set. Often because it's the primary photo of the set.
 			print e,rec["photoHid"],rec["setHid"]
 			return 0
-	db.modifyPhotoSynced(rec["photo_id"], 2, rec["set_id"])
+	db.setPhotoAddedToSet(rec["photo_id"],rec["set_id"])
+	#db.modifyPhotoSynced(rec["photo_id"], 2, rec["set_id"])
 	print "added to set: ",rec["photoHid"],rec["setHid"]
 
 def addPhotosToFlickrSets():
