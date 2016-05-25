@@ -10,7 +10,7 @@ yourlsTimer=0
 signature=""
 
 photos_list=Queue.Queue()
-hosted_urls=Queue.Queue()
+db_queue=Queue.Queue()
 unshortened_list=Queue.Queue()
 
 
@@ -49,7 +49,7 @@ def getFlickrURL(rec):
 	elif format=="jpg":
 		url="https://farm{farm}.staticflickr.com/{server}/{id}_{secret}_z.{originalformat}".format(**base.attrib)
 
-	hosted_urls.put({"photo_id":rec["photo_id"],"hosted_url":url})
+	db_queue.put({"taskName":"saveHostedURL","photo_id":rec["photo_id"],"hosted_url":url})
 
 #
 #	Save a Flcikr URL to the database
@@ -92,11 +92,14 @@ def createWorkers(num,target,queue):
 def mainDBWork():
 	while True:
 		try:
-			task=hosted_urls.get(False)
+			task=db_queue.get(False)
 		except Queue.Empty:
 			break
 		#print task["photo_id"], task["hosted_url"]
-		saveFlickrURL(task)
+		if task["taskName"]=="saveHostedURL":
+			saveFlickrURL(task)
+		elif task["taskName"]=="saveShortLink":
+			saveShortLink(task)
 
 
 
@@ -154,25 +157,32 @@ def getShortURL(rec):
 	try:
 		res=json.loads(res)
 	except ValueError:
+		#Server didn't return json response, possibly the api is not working
 		print "Server didn't return json response"
 	except:
+		#Any other exceptions
 		raise
 	else:
 		if("status" in res):
 			if(res["status"]=="success"):
 				shortURL=res["shorturl"]
-				toSave={"photo_id":photo_id,"refering_url":shortURL}
-				print toSave
+				return (photo_id,shortURL)
 			else:
+				#Didn't successfully get the short URL
 				print res["message"]
 		else:
+			#Coudln't get to the shortener service
 			print "Server error", res
+	return False
 
 
 def urlShortenTask(index,queue):
 	while True:
 		task=queue.get()
 		res=getShortURL(task)
+		if res:
+			toSave={"taskName":"saveShortLink","photo_id":res[0],"refering_url":res[1]}
+			db_queue.put(toSave)
 		queue.task_done()
 
 
