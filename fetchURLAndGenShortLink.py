@@ -32,6 +32,12 @@ def getPhotosHIDForFlickr():
 
 
 
+
+
+
+
+
+
 #
 #	Retrive info about picture from Flickr, and assemble the photo urls
 #	PNG and JPG use different rules for assembling photo urls
@@ -68,6 +74,10 @@ def flickrURLTask(index,queue):
 		task=queue.get()
 		res=getFlickrURL(task)
 		queue.task_done()
+
+
+
+
 
 
 
@@ -116,6 +126,15 @@ def getUnShortenedPhotos():
 	'''
 	return db.makeQuery(cmd)[0].fetchall()
 
+
+
+
+
+
+
+
+
+
 #
 #	Get an authentication token for yourls, by
 # either generating it with the time or getting
@@ -133,26 +152,72 @@ def getYourlsToken():
 	return signature, str(int(yourlsTimer))
 
 #
+#	Making a API call to yourls server.
+#
+#
+def yourlsAPI(action, postData):
+	url="{yourlsURL}/yourls-api.php?timestamp={timestamp}&signature={signature}&action={action}"
+	signature, timestamp=getYourlsToken()
+	yourlsURL=yourls_URL
+	url=url.format(**locals())
+
+	r=requests.post(url,data=postData)
+	return r
+
+#
+#	Handling response from the yourls server, dealing
+#	with different errors
+#
+def processYourlsResp(resp):
+	try:
+		res=json.loads(resp)
+	except ValueError:
+		print "Server didn't return json response"
+	except:
+		#Any other exceptions
+		raise
+	else:
+		if "statusCode" in res:
+			return res
+		else:
+			#Coudln't get to the shortener service
+			print "Server error", res
+	return False
+
+#
 #	Request short url from yourls by providing the 
-# long url, required short url and the identifying
+# long url, requiring short url and the identifying
 # title
 #
 def requestShortURL(longURL,keyword,title):
-	#global yourlsURL
-	url="{yourlsURL}/yourls-api.php?timestamp={timestamp}&signature={signature}&action={action}"
-	signature, timestamp=getYourlsToken()
-	action="shorturl"
-	yourlsURL=yourls_URL
-	url=url.format(**locals())
-	#print url
-
-	r=requests.post(url,data={
+	r=yourlsAPI("shorturl",postData={
 		"url":longURL,
 		"keyword":keyword,
 		"title":title,
 		"format":"json",
 	})
-	return r.text
+	return processYourlsResp(r.text)
+
+#
+#	Request short url from yourls by providing the 
+# keyword, looking up an existing short url for
+#	the long url
+#
+def expandShortURL(shorturl):
+	r=yourlsAPI("expand",postData={
+		"shorturl":shorturl,
+		"format":"json",
+	})
+	return processYourlsResp(r.text)
+
+
+
+
+
+
+
+
+
 
 #
 #	The whole process of using a record from photos
@@ -174,26 +239,22 @@ def getShortURL(rec):
 	#print keyword
 	res=requestShortURL(hosted_url,keyword,title)
 
-	try:
-		res=json.loads(res)
-	except ValueError:
-		#Server didn't return json response, possibly the api is not working
-		print "Server didn't return json response"
-	except:
-		#Any other exceptions
-		raise
-	else:
-		if("status" in res):
-			if(res["status"]=="success"):
-				shortURL=res["shorturl"]
-				return shortURL
+	if res:
+		if res["status"]=="success":
+			shortURL=res["shorturl"]
+			return shortURL
+		elif res["code"]=="error:keyword":
+			print res["message"], "attemp recovering"
+			res2=expandShortURL(keyword)
+			if res2["message"]=="success":
+				if res2["longurl"]==hosted_url:
+					print "Recovered"+res2["shorturl"]
+					return res2["shorturl"]
 			else:
-				#Didn't successfully get the short URL
-				print res["message"]
-		else:
-			#Coudln't get to the shortener service
-			print "Server error", res
-	return False
+				print "Failed to recover "+photo_id
+	else:
+		return res
+
 
 #
 #	The whole process of using a record from
@@ -214,6 +275,10 @@ def urlShortenTask(index,queue):
 def saveShortLink(task):
 	db.setPhotoReferingURL(task["photo_id"],task["refering_url"])
 	print task["photo_id"]," shortened"
+
+
+
+
 
 
 
@@ -260,6 +325,7 @@ if __name__=="__main__":
 	fetchURLAndGenShortLink()
 	'''
 	for i in range(1):
-		requestShortURL("http://google.com","goog{}".format(i),"goog{}".format(i))
+		print requestShortURL("http://google.com","goog{}".format(1),"goog{}".format(i))
 		time.sleep(3)
 	'''
+	#print json.loads(expandShortURL("goog1"))["longurl"]=="http://google.com"
