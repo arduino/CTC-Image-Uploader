@@ -1,5 +1,7 @@
 import sqlite3
+import os
 from itertools import groupby, chain
+
 from mainDB import CTCPhotoDB
 
 ##################################
@@ -20,9 +22,6 @@ idParentCollection = "683583"  # this is the collection that contains the whole 
 idExclude = "671489"
 # verbose level
 ver = 0
-
-photoDB=CTCPhotoDB()
-
 
 ##################################
 
@@ -68,7 +67,7 @@ def combineLists(list1,list2):
         resultList.append(d)
     return resultList
 
-def extractAndPopulate():
+def extractAndPopulate(photoDB):
 
     ## The Loop that will look into the DB
     with sqlite3.connect(filename) as conn:
@@ -85,7 +84,6 @@ def extractAndPopulate():
         for collection in listCollections:
             print collection
             photoDB.addSet({"set_id":collection[0],"name":collection[1]})
-            photoDB.commit();
             # Init the arrays to be used when navigating a collection
             # List of images
             listImages = []
@@ -117,6 +115,34 @@ def extractAndPopulate():
         photoDB.commit();
             ### Save the resultList into new db and do stuff
 
+def updateDB(photoDB):
+    cur=photoDB.conn.cursor()
+    cur.execute('ATTACH DATABASE "./maindb_old.db" AS db2')
+    #cur.execute('SELECT db2.photos.folder, main.photos.photo_id FROM db2.photos INNER JOIN main.photos WHERE db2.photos.synced==7')
+    cmd='''
+        UPDATE main.photos
+        SET folder=(
+                SELECT folder FROM db2.photos 
+                WHERE photo_id=main.photos.photo_id AND set_id=main.photos.set_id)
+    '''
+    cmd2='''
+        UPDATE photos
+        SET folder=""
+    '''
+    cmd3='''
+        SELECT *
+        FROM photos
+        WHERE ID= "1"
+    '''
+    cur.execute(cmd)
+    photoDB.conn.commit()
+
+    #print cur.fetchone()
 
 if __name__=="__main__":
-    extractAndPopulate()
+    photoDB=CTCPhotoDB()
+    photoDB.createTables()
+    photoDB.commit()
+
+    updateDB(photoDB)
+    #extractAndPopulate(photoDB)
