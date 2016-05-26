@@ -1,12 +1,9 @@
 import sqlite3, datetime
 
-db_file="maindb.db"
-
 class CTCPhotoDB:
-	def __init__(self):
+	def __init__(self, db_file="maindb.db"):
 		self.conn=sqlite3.connect(db_file)
 		self.conn.row_factory = sqlite3.Row
-		self.cursor=self.conn.cursor()
 
 	def createTables(self):
 		cmds=['''
@@ -34,7 +31,7 @@ class CTCPhotoDB:
 		''']
 
 		for cmd in cmds:
-			self.cursor.execute(cmd)
+			self.makeQuery(cmd)
 
 	def addSet(self, pack):
 		ipt=self.updatedInput({"set_id":"","name":"","hosted_id":"","state":0},pack)
@@ -43,9 +40,7 @@ class CTCPhotoDB:
 		('{set_id}','{name}','{hosted_id}','{state}')
 		'''.format(**ipt)
 
-		#print cmd
-
-		self.cursor.execute(cmd)
+		self.makeQuery(cmd)
 
 	def addPhoto(self,pack):
 		basePack={
@@ -67,9 +62,7 @@ class CTCPhotoDB:
 		('{ID}','{photo_id}','{file_name}','{set_id}','{folder}',{order_in_set},'{hosted_url}','{hosted_id}','{refering_url}','{last_updated}',{synced})
 		'''.format(**ipt)
 
-		#print cmd
-
-		self.cursor.execute(cmd)
+		self.makeQuery(cmd)
 
 
 
