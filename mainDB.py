@@ -5,6 +5,12 @@ class CTCPhotoDB:
 		self.conn=sqlite3.connect(db_file)
 		self.conn.row_factory = sqlite3.Row
 
+	def commit(self):
+		self.conn.commit()
+	
+	def close(self):
+		self.conn.close()
+
 	def createTables(self):
 		cmds=['''
 		CREATE TABLE IF NOT EXISTS photos(
@@ -117,8 +123,6 @@ class CTCPhotoDB:
 		return self.makeQuery(cmd)[1]
 
 
-	def commit(self):
-		self.conn.commit()
 
 	def getAllPhotos(self):
 		return self.getAllFromTable("photos")

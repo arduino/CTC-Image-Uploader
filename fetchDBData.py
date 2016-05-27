@@ -1,5 +1,5 @@
 import sqlite3
-import os
+import os,sys
 from itertools import groupby, chain
 
 from mainDB import CTCPhotoDB
@@ -22,6 +22,9 @@ idParentCollection = "683583"  # this is the collection that contains the whole 
 idExclude = "671489"
 # verbose level
 ver = 0
+
+dbPath="maindb.db"
+tmpdbPath="maindb_old.db"
 
 ##################################
 
@@ -78,7 +81,6 @@ def extractAndPopulate(photoDB):
         # Get the list of collections under a certain parent
         listCollections=getCollections(cursor)
         
-        print "Begin!"
         # Get the information from the table with the images in the collections
         auto_id=0
         for collection in listCollections:
@@ -115,34 +117,78 @@ def extractAndPopulate(photoDB):
         photoDB.commit();
             ### Save the resultList into new db and do stuff
 
-def updateDB(photoDB):
+def updateDB(photoDB, oldDBPath):
     cur=photoDB.conn.cursor()
-    cur.execute('ATTACH DATABASE "./maindb_old.db" AS db2')
+    cur.execute('ATTACH DATABASE "{}" AS db2'.format(oldDBPath))
     #cur.execute('SELECT db2.photos.folder, main.photos.photo_id FROM db2.photos INNER JOIN main.photos WHERE db2.photos.synced==7')
-    cmd='''
+    cmd=['''
         UPDATE main.photos
-        SET folder=(
-                SELECT folder FROM db2.photos 
-                WHERE photo_id=main.photos.photo_id AND set_id=main.photos.set_id)
+        SET synced=(
+                SELECT synced FROM db2.photos 
+                WHERE photo_id=main.photos.photo_id AND set_id=main.photos.set_id),
+            folder=(
+                SELECT folder FROM db2.photos
+                WHERE photo_id=main.photos.photo_id),
+            hosted_url=(
+                SELECT hosted_url FROM db2.photos
+                WHERE photo_id=main.photos.photo_id),
+            hosted_id=(
+                SELECT hosted_id FROM db2.photos
+                WHERE photo_id=main.photos.photo_id),
+            refering_url=(
+                SELECT refering_url FROM db2.photos
+                WHERE photo_id=main.photos.photo_id)
+    ''',
     '''
-    cmd2='''
+        UPDATE main.sets
+        SET hosted_id=(
+            SELECT hosted_id FROM db2.sets
+            WHERE set_id=main.sets.set_id),
+            state=(
+            SELECT state!=0 FROM db2.sets
+            WHERE set_id=main.sets.set_id)
+    ''']
+    
+    cmd2=['''
         UPDATE photos
-        SET folder=""
+        SET folder="",hosted_url="",hosted_id="",refering_url=""
+    ''',
     '''
-    cmd3='''
-        SELECT *
-        FROM photos
-        WHERE ID= "1"
-    '''
-    cur.execute(cmd)
+        UPDATE sets
+        SET hosted_id="",state=0
+    ''']
+
+    for one in cmd:
+        cur.execute(one)
+
     photoDB.conn.commit()
 
-    #print cur.fetchone()
-
 if __name__=="__main__":
+    print "Some data will be lost with this operation. \
+    \nPress y to continue, other keys to quit."
+    cfm=raw_input("")
+    if cfm!="y":
+        quit()
+
+    if os.path.isfile(tmpdbPath):
+        print tmpdbPath+" already exists. \
+        \nRemove it manually if there's nothing important."
+        quit()
+    os.rename(dbPath,tmpdbPath)
+
+    print "Creating tables..."
     photoDB=CTCPhotoDB()
     photoDB.createTables()
     photoDB.commit()
 
-    updateDB(photoDB)
-    #extractAndPopulate(photoDB)
+    print "Populating tables..."
+    extractAndPopulate(photoDB)
+
+    print "Updating tables with existing data..."
+    updateDB(photoDB,tmpdbPath)
+    
+    print "Cleaning up..."
+    photoDB.close()
+    os.remove(tmpdbPath)
+
+    print "All done."
