@@ -11,6 +11,14 @@ class CTCPhotoDB:
 	def close(self):
 		self.conn.close()
 
+
+
+
+
+	#
+	#	Create Tables, for first time use
+	#
+	#
 	def createTables(self):
 		cmds=['''
 		CREATE TABLE IF NOT EXISTS photos(
@@ -39,8 +47,17 @@ class CTCPhotoDB:
 		for cmd in cmds:
 			self.makeQuery(cmd)
 
+
+
+
+
+	#
+	#	Add a record to sets table.
+	#	values must be packed into a dictionary.
+	#
+	#
 	def addSet(self, pack):
-		ipt=self.updatedInput({"set_id":"","name":"","hosted_id":"","state":0},pack)
+		ipt=updatedInput({"set_id":"","name":"","hosted_id":"","state":0},pack)
 		cmd='''
 		INSERT OR IGNORE INTO sets VALUES
 		('{set_id}','{name}','{hosted_id}','{state}')
@@ -48,6 +65,11 @@ class CTCPhotoDB:
 
 		self.makeQuery(cmd)
 
+	#
+	#	Add a record to photos table.
+	#	values must be packed into a dictionary.
+	#
+	#
 	def addPhoto(self,pack):
 		basePack={
 			"ID":"",
@@ -62,7 +84,7 @@ class CTCPhotoDB:
 			"last_updated":datetime.datetime.now(),
 			"synced":0
 		}
-		ipt=self.updatedInput(basePack,pack)
+		ipt=updatedInput(basePack,pack)
 		cmd='''
 		INSERT OR IGNORE INTO photos VALUES
 		('{ID}','{photo_id}','{file_name}','{set_id}','{folder}',{order_in_set},'{hosted_url}','{hosted_id}','{refering_url}','{last_updated}',{synced})
@@ -72,38 +94,72 @@ class CTCPhotoDB:
 
 
 
+
+
+
+	#
+	#	Modify the state of a set record
+	#
+	#
+	def modifySetState(self,set_id,state):
+		self.modifySetByID(set_id,state=state).commit()
+
+	#
+	#	Modify a set by values set in kwargs
+	#
+	#
 	def modifySetByID(self, set_id, **kwargs):
 		set_id="'{}'".format(set_id)
 		return self.modifyRec("sets",{"set_id":set_id}, kwargs)
 
-	def modifySetState(self,set_id,state):
-		self.modifySetByID(set_id,state=state).commit()
 
-
-
-	def modifyPhotoByID(self, photo_id, **kwargs):
-		photo_id="'{}'".format(photo_id)
-		return self.modifyRec("photos",{"photo_id":photo_id}, kwargs)
-
+	#
+	#	Set the hosted_id of a photo.
+	#	It is assumed that the photo is uploaded. Thus the first bit of synced is set 1
+	#
 	def setPhotoHostedID(self, photo_id, hosted_id):
 		hosted_id="'{}'".format(hosted_id)
 		self.modifyPhotoByID(photo_id,hosted_id=hosted_id,synced=1).commit()
 
+	#
+	#	Set the hosted_url of a photo.
+	#
+	#
 	def setPhotoHostedURL(self, photo_id, hosted_url):
 		hosted_url="'{}'".format(hosted_url)
 		self.modifyPhotoByID(photo_id,hosted_url=hosted_url).commit()
 
+	#
+	#	Set the hosted_id of a photo.
+	#	The second bit of synced is set 1
+	#
 	def setPhotoAddedToSet(self, photo_id, set_id):
 		photo_id="'{}'".format(photo_id)
 		set_id="'{}'".format(set_id)
 		self.modifyRec("photos",{"photo_id":photo_id,"set_id":set_id},{"synced":2}).commit()
 
+	#
+	#	Set the refering_url of a photo.
+	#	The third bit of synced is set 1
+	#
 	def setPhotoReferingURL(self, photo_id, refering_url):
 		refering_url="'{}'".format(refering_url)
 		self.modifyPhotoByID(photo_id,refering_url=refering_url, synced=4).commit()
 
+	#
+	#	Modify a photo by values set in kwargs
+	#
+	#
+	def modifyPhotoByID(self, photo_id, **kwargs):
+		photo_id="'{}'".format(photo_id)
+		return self.modifyRec("photos",{"photo_id":photo_id}, kwargs)
 
 
+	#
+	#	Make a query to update records. 
+	#	Table name, update list, and where list are customizable.
+	#	The synced field can be set.
+	#
 	def modifyRec(self, tb_name, where, toModify):
 		tmp=["{}={}".format(k,v) for (k,v) in where.items()]
 		where_list=" AND ".join(tmp)
@@ -124,48 +180,89 @@ class CTCPhotoDB:
 
 
 
+
+
+
+	#
+	#	Get all photos from the photos table 
+	#
 	def getAllPhotos(self):
 		return self.getAllFromTable("photos")
 
+	#
+	#	Get all sets from the sets table 
+	#
 	def getAllSets(self):
 		return self.getAllFromTable("sets")
 
+	#
+	#	Get everything from a table 
+	#
 	def getAllFromTable(self, tb_name):
 		cmd="SELECT * FROM "+tb_name
 		return self.makeQuery(cmd)[0].fetchall()
 
+
+	#
+	#	Get a set by its set_id field 
+	#
 	def getSetByID(self, set_id):
+		set_id="'{}'".format(set_id)
 		res=self.getRecByField("sets","set_id",set_id)
 		return res.fetchone()
 
+	#
+	#	Get all photos with a certain set_id 
+	#
 	def getPhotosBySetID(self,set_id):
+		set_id="'{}'".format(set_id)
 		res=self.getRecByField("photos","set_id",set_id)
 		return res.fetchall()
 
+	#
+	#	Get records by specifying table name, field and value to query 
+	#
 	def getRecByField(self, tb_name,field_name,value):
-		cmd="SELECT * FROM {tb_name} WHERE {field_name}='{value}'".format(**locals())
+		cmd="SELECT * FROM {tb_name} WHERE {field_name}={value}".format(**locals())
 		return self.makeQuery(cmd)[0]
 
+
+	#
+	#	Make a query to the db 
+	#
 	def makeQuery(self, cmd):
-		#tmp_conn=sqlite3.connect(db_file)
-		#tmp_conn.row_factory = sqlite3.Row
-		tmp_conn=self.conn
-		tmp_cursor=tmp_conn.cursor()
+		conn=self.conn
+		tmp_cursor=conn.cursor()
 		tmp_cursor.execute(cmd)
-		return tmp_cursor, tmp_conn
+		return tmp_cursor, conn
 
 
-	def updatedInput(self, base, newData):
-		keys=base.keys()
-		base.update(newData)
-		res={k:base[k] for k in base if k in keys}
-		return res
+
+
+
+
+#
+#	Util function
+#	Update a base dictionary with another dictionary.
+#	Only keys in the base dictionary is accepted  
+#
+def updatedInput(base, newData):
+	keys=base.keys()
+	base.update(newData)
+	res={k:base[k] for k in base if k in keys}
+	return res
+
+
+
+
 
 
 if __name__=="__main__":
+	'''
 	query=CTCPhotoDB()
 	query.createTables()
 	query.commit()
+	'''
 
 	#query.addSet({"set_id":"234125","name":"Bla"})
 	#query.addSet({"name":"world"})
