@@ -1,13 +1,11 @@
-import requests
 import sqlite3, Queue, threading
 import flickrapi
-import time, hashlib, math, json
+import time, json
 
-from configs import flickr_api_key, flickr_api_secret, yourls_signature, yourls_URL
+from configs import flickr_api_key, flickr_api_secret
 from mainDB import CTCPhotoDB
+from yourlsapi import requestShortURL, expandShortURL
 
-yourlsTimer=0
-signature=""
 
 photos_list=Queue.Queue()
 db_queue=Queue.Queue()
@@ -18,9 +16,9 @@ db=CTCPhotoDB()
 
 f = flickrapi.FlickrAPI(flickr_api_key, flickr_api_secret)
 
+
 #
 #	Get all photos which should have their flickr url updated
-#
 #
 def getPhotosHIDForFlickr():
 	cmd='''
@@ -29,14 +27,6 @@ def getPhotosHIDForFlickr():
 	WHERE hosted_url == "" AND synced & 1 == 1
 	'''
 	return db.makeQuery(cmd)[0].fetchall()
-
-
-
-
-
-
-
-
 
 #
 #	Retrive info about picture from Flickr, and assemble the photo urls
@@ -55,24 +45,16 @@ def getFlickrURL(rec):
 	elif format=="jpg":
 		url="https://farm{farm}.staticflickr.com/{server}/{id}_{secret}_z.{originalformat}".format(**base.attrib)
 
-	db_queue.put({"taskName":"saveHostedURL","photo_id":rec["photo_id"],"hosted_url":url})
-
-#
-#	Save a Flcikr URL to the database
-#
-#
-def saveFlickrURL(data):
-	db.setPhotoHostedURL(data["photo_id"],hosted_url=data["hosted_url"])
-	print data["photo_id"]," saved"
+	return url
 
 #
 #	Worker task of handling Flickr URLs
-#
 #
 def flickrURLTask(index,queue):
 	while True:
 		task=queue.get()
 		res=getFlickrURL(task)
+		db_queue.put({"taskName":"saveHostedURL","photo_id":task["photo_id"],"hosted_url":url})
 		queue.task_done()
 
 
@@ -83,38 +65,8 @@ def flickrURLTask(index,queue):
 
 
 #
-#	Create webworkers for handling tasks
-#
-#
-def createWorkers(num,target,queue):
-	for i in range(num):
-		worker=threading.Thread(target=target,args=(i, queue))
-		worker.setDaemon(True)
-		worker.start()
-
-#
-#	main thread worker, saves data into db.
-#	It saves: Flickr URL and shorterned URL
-#
-#
-def mainDBWork():
-	while True:
-		try:
-			task=db_queue.get(False)
-		except Queue.Empty:
-			break
-		#print task["photo_id"], task["hosted_url"]
-		if task["taskName"]=="saveHostedURL":
-			saveFlickrURL(task)
-		elif task["taskName"]=="saveShortLink":
-			saveShortLink(task)
-
-
-
-#
 #	Get all photo records from the db who needs 
 #	to have its hosted url shortened
-#
 #
 def getUnShortenedPhotos():
 	cmd='''
@@ -125,99 +77,6 @@ def getUnShortenedPhotos():
 	GROUP BY photos.photo_id	
 	'''
 	return db.makeQuery(cmd)[0].fetchall()
-
-
-
-
-
-
-
-
-
-
-#
-#	Get an authentication token for yourls, by
-# either generating it with the time or getting
-# an unexpired one
-#
-def getYourlsToken():
-	global yourlsTimer, signature
-	currentTime=time.time()
-	if currentTime-yourlsTimer>3600:
-		yourlsTimer=currentTime
-		m=hashlib.md5()
-		m.update(str(int(yourlsTimer))+yourls_signature)
-		signature=m.hexdigest()
-
-	return signature, str(int(yourlsTimer))
-
-#
-#	Making a API call to yourls server.
-#
-#
-def yourlsAPI(action, postData):
-	url="{yourlsURL}/yourls-api.php?timestamp={timestamp}&signature={signature}&action={action}"
-	signature, timestamp=getYourlsToken()
-	yourlsURL=yourls_URL
-	url=url.format(**locals())
-
-	r=requests.post(url,data=postData)
-	return r
-
-#
-#	Handling response from the yourls server, dealing
-#	with different errors
-#
-def processYourlsResp(resp):
-	try:
-		res=json.loads(resp)
-	except ValueError:
-		print "Server didn't return json response"
-	except:
-		#Any other exceptions
-		raise
-	else:
-		if "statusCode" in res:
-			return res
-		else:
-			#Coudln't get to the shortener service
-			print "Server error", res
-	return False
-
-#
-#	Request short url from yourls by providing the 
-# long url, requiring short url and the identifying
-# title
-#
-def requestShortURL(longURL,keyword,title):
-	r=yourlsAPI("shorturl",postData={
-		"url":longURL,
-		"keyword":keyword,
-		"title":title,
-		"format":"json",
-	})
-	return processYourlsResp(r.text)
-
-#
-#	Request short url from yourls by providing the 
-# keyword, looking up an existing short url for
-#	the long url
-#
-def expandShortURL(shorturl):
-	r=yourlsAPI("expand",postData={
-		"shorturl":shorturl,
-		"format":"json",
-	})
-	return processYourlsResp(r.text)
-
-
-
-
-
-
-
-
-
 
 #
 #	The whole process of using a record from photos
@@ -269,12 +128,54 @@ def urlShortenTask(index,queue):
 			db_queue.put(toSave)
 		queue.task_done()
 
+
+
+
+
+
+
+
+
+#
+#	Create webworkers for handling tasks
+#
+#
+def createWorkers(num,target,queue):
+	for i in range(num):
+		worker=threading.Thread(target=target,args=(i, queue))
+		worker.setDaemon(True)
+		worker.start()
+
+#
+#	main thread worker, saves data into db.
+#	It saves: Flickr URL and shorterned URL
+#
+def mainDBWork():
+	while True:
+		try:
+			task=db_queue.get(False)
+		except Queue.Empty:
+			break
+		#print task["photo_id"], task["hosted_url"]
+		if task["taskName"]=="saveHostedURL":
+			saveFlickrURL(task)
+		elif task["taskName"]=="saveShortLink":
+			saveShortLink(task)
+
 #
 #	Actual DB work to save the short link
 #
 def saveShortLink(task):
 	db.setPhotoReferingURL(task["photo_id"],task["refering_url"])
 	print task["photo_id"]," shortened"
+
+#
+#	Save a Flcikr URL to the database
+#
+def saveFlickrURL(data):
+	db.setPhotoHostedURL(data["photo_id"],hosted_url=data["hosted_url"])
+	print data["photo_id"]," saved"
+
 
 
 
@@ -296,30 +197,38 @@ def saveShortLink(task):
 #
 #
 def fetchURLAndGenShortLink():
+	#Workers for getting Flickr URL
 	for one in getPhotosHIDForFlickr():
-		#print one
 		photos_list.put(one)
 
 	createWorkers(5,flickrURLTask, photos_list)
 
 
+	#Workers for getting short links
 	for one in getUnShortenedPhotos()[0:1]:
 		unshortened_list.put(one)
 
 	createWorkers(5,urlShortenTask, unshortened_list)
 
 
+	#First, get all flickr URLs
 	while photos_list.qsize()>0:
 		mainDBWork()
 	photos_list.join()
 
 
+	#Next, get all short links. This ensures all flickr links
+	#Are retrived first
 	while unshortened_list.qsize()>0:
 		mainDBWork()
 	unshortened_list.join()
 
 
+	#Finish off any db work that's not done
 	mainDBWork()
+
+
+
 
 if __name__=="__main__":
 	fetchURLAndGenShortLink()
