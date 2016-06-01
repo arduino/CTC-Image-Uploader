@@ -205,7 +205,7 @@ def fetchURLAndGenShortLink():
 
 
 	#Workers for getting short links
-	for one in getUnShortenedPhotos()[0:1]:
+	for one in getUnShortenedPhotos():
 		unshortened_list.put(one)
 
 	createWorkers(5,urlShortenTask, unshortened_list)
