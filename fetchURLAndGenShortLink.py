@@ -118,14 +118,21 @@ def mainDBWork():
 #
 def getUnShortenedPhotos():
 	cmd='''
-	SELECT photos.photo_id, photos.hosted_url, photos.order_in_set, sets.name
+	SELECT photos.photo_id, photos.hosted_url, sets.name
 	FROM photos INNER JOIN sets
 	ON photos.set_id==sets.set_id
-	WHERE photos.synced & 4 != 4 AND photos.hosted_url != ""
-	GROUP BY photos.photo_id	
+	WHERE photos.synced & 4 != 4 AND photos.hosted_url != "" AND (photos.version == "" OR photos.version has "{}")
+	GROUP BY photos.photo_id
+	ORDER BY photos.order_in_set
 	'''
-	return db.makeQuery(cmd)[0].fetchall()
-
+	resAll=[]
+	for one in ["arduino","genuino","arduino101","genuino101"]:
+		res=db.makeQuery(cmd.format(one))[0].fetchall()
+		for i,x in enumerate(res):
+			x["_order"]=i
+			x["_board_version"]=one
+		resAll.extend(res)
+	return resAll
 
 
 
@@ -232,10 +239,16 @@ def getShortURL(rec):
 	photo_id=rec["photo_id"]
 	hosted_url=rec["hosted_url"]
 	set_name=rec["name"]
-	order_in_set=rec["order_in_set"]
+	#order_in_set=rec["order_in_set"]
 
-	title="CTC {} slideshow {}".format(set_name, order_in_set)
-	keyword="ctc-s-"+set_name.split(" ")[1]+"-"+str(order_in_set)
+	board_version=rec["_board_version"]
+	order=rec["_order"]
+	
+	if board_version=="":
+		board_version="cm"
+
+	title="CTC {} {} slideshow {}".format(board_version, set_name, order)
+	keyword="ctc-"+board_version+"-s-"+set_name.split(" ")[1]+"-"+str(order)
 	#print keyword
 	res=requestShortURL(hosted_url,keyword,title)
 
@@ -286,9 +299,9 @@ def saveShortLink(task):
 #
 #	Steps for generating the urls and saving them
 #
-#	1. Get all records where urls need to be updated
+# 1. Get all records where urls need to be updated
 # 2. Create web workers to fetch urls from flickr
-#	3. Get all records where short url needs to be generated
+# 3. Get all records where short url needs to be generated
 # 4. Create web workers to generate short urls
 # 5. Wait for the urls to be fetched from flickr
 # 6. Wait for the short urls to be generated
@@ -322,7 +335,8 @@ def fetchURLAndGenShortLink():
 	mainDBWork()
 
 if __name__=="__main__":
-	fetchURLAndGenShortLink()
+
+	#fetchURLAndGenShortLink()
 	'''
 	for i in range(1):
 		print requestShortURL("http://google.com","goog{}".format(1),"goog{}".format(i))

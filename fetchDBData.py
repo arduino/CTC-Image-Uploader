@@ -70,6 +70,10 @@ def combineLists(list1,list2):
         resultList.append(d)
     return resultList
 
+def getBoardVersion(caption):
+    versions=caption.split("**")[1]
+    return versions
+
 def extractAndPopulate(photoDB):
 
     ## The Loop that will look into the DB
@@ -112,7 +116,8 @@ def extractAndPopulate(photoDB):
             '''
             #if collection[0]==683635:
             for idx, one in enumerate(resultList):
-                photoDB.addPhoto({"ID":auto_id,"photo_id":one["id_local"],"file_name":one["baseName"],"set_id":collection[0],"order_in_set":idx})
+                board_version=getBoardVersion(one["caption"])
+                photoDB.addPhoto({"ID":auto_id,"photo_id":one["id_local"],"file_name":one["baseName"],"set_id":collection[0],"order_in_set":idx,"board_version":board_version})
                 auto_id=auto_id+1
         photoDB.commit();
             ### Save the resultList into new db and do stuff
