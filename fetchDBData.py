@@ -71,8 +71,11 @@ def combineLists(list1,list2):
     return resultList
 
 def getBoardVersion(caption):
-    versions=caption.split("**")[1]
-    return versions
+    if caption!=None:
+        if "**" in caption:
+            versions=caption.split("**")[1]
+            return versions
+    return ""
 
 def extractAndPopulate(photoDB):
 
@@ -143,6 +146,11 @@ def updateDB(photoDB, oldDBPath):
             refering_url=(
                 SELECT refering_url FROM db2.photos
                 WHERE photo_id=main.photos.photo_id)
+    ''',
+    '''
+        UPDATE photos
+        SET synced=0, folder="", hosted_url="", hosted_id="", refering_url=""
+        WHERE synced is NULL
     ''',
     '''
         UPDATE main.sets

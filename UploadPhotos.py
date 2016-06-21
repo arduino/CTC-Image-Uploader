@@ -190,3 +190,9 @@ def uploadPictures():
 	upload_queue.join()
 	#Finish off the db recording task
 	main_dbWork(db_queue)
+
+
+if __name__=="__main__":
+	f.authenticate_via_browser(perms='delete')
+
+	uploadPictures()

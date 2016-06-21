@@ -28,11 +28,12 @@ class CTCPhotoDB:
 			set_id INT,
 			folder INT,
 			order_in_set INT,
+			board_version CHAR(125),
 			hosted_url CHAR(255),
 			hosted_id CHAR(15),
 			refering_url CHAR(125),
 			last_updated DATETIME,
-			synced TINYINT
+			synced TINYINT DEFAULT 0
 		);
 		''',
 		'''
@@ -78,6 +79,7 @@ class CTCPhotoDB:
 			"set_id":"",
 			"folder":"",
 			"order_in_set":-1,
+			"board_version":"",
 			"hosted_url":"",
 			"hosted_id":"",
 			"refering_url":"",
@@ -87,7 +89,7 @@ class CTCPhotoDB:
 		ipt=updatedInput(basePack,pack)
 		cmd='''
 		INSERT OR IGNORE INTO photos VALUES
-		('{ID}','{photo_id}','{file_name}','{set_id}','{folder}',{order_in_set},'{hosted_url}','{hosted_id}','{refering_url}','{last_updated}',{synced})
+		('{ID}','{photo_id}','{file_name}','{set_id}','{folder}',{order_in_set},'{board_version}','{hosted_url}','{hosted_id}','{refering_url}','{last_updated}',{synced})
 		'''.format(**ipt)
 
 		self.makeQuery(cmd)

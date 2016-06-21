@@ -4,7 +4,7 @@ from configs import flickr_api_key, flickr_api_secret
 
 from UploadPhotos import uploadPictures
 from CreateAndFillSets import CreateAndFillSets
-from fetchURLAndGenShortLink import fetchURLAndGenShortLink
+from fetchURL import fetchURL
 
 
 f = flickrapi.FlickrAPI(flickr_api_key, flickr_api_secret)
@@ -18,6 +18,6 @@ if __name__=="__main__":
 	CreateAndFillSets()
 	print("All Sets created and filled")
 
-	fetchURLAndGenShortLink()
+	fetchURL()
 	print("All hosted URLs saved, short links created")
 
