@@ -206,6 +206,14 @@ class CTCPhotoDB:
 
 
 	#
+	#	Get a photo by its photo_id field 
+	#
+	def getPhotoByID(self, photo_id):
+		photo_id="'{}'".format(photo_id)
+		res=self.getRecByField("photos","photo_id",photo_id)
+		return res.fetchone()
+
+	#
 	#	Get a set by its set_id field 
 	#
 	def getSetByID(self, set_id):
