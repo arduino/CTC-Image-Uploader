@@ -9,6 +9,7 @@ from mainDB import CTCPhotoDB
 yourlsTimer=0
 signature=""
 
+output=""
 
 toShortenList=Queue.Queue()
 db_queue=Queue.Queue()
@@ -275,7 +276,7 @@ def getFullyUploadedSets():
 
 def getVersionedPhotosBySet(rec):
 	cmd='''
-	SELECT photos.photo_id, photos.hosted_url, photos.photo_id
+	SELECT photos.photo_id, photos.hosted_url, photos.photo_id, photos.file_name
 	FROM photos INNER JOIN sets
 	ON photos.set_id==sets.set_id
 	WHERE sets.set_id=="{}" AND (photos.board_version == "" OR photos.board_version LIKE "%{}%")
@@ -289,10 +290,12 @@ def getVersionedPhotosBySet(rec):
 	return resAll
 
 def makeShortLinkForBoard(photos,board,photoSet):
-	for i,photo in enumerate(photos[:3]):
+	global output
+	for i,photo in enumerate(photos):
 		title,keyword=makeShortURL(photo,i,board,photoSet["name"])
 		#print title,keyword, photo["photo_id"]
-		toShortenList.put({"title":title, "keyword":keyword, "photo_id":photo["photo_id"], "hosted_url":photo["hosted_url"]})
+		output=output+"<photo>\n<filename>{}</filename>\n<shortlink>http://verkstad.cc/urler/{}</shortlink>\n</photo>\n".format(photo["file_name"],keyword)
+		#toShortenList.put({"title":title, "keyword":keyword, "photo_id":photo["photo_id"], "hosted_url":photo["hosted_url"]})
 
 
 
@@ -304,24 +307,36 @@ def makeShortLinkForBoard(photos,board,photoSet):
 
 
 def createShortLinks():
+	global output
 	targetSets=getFullyUploadedSets()
 
-	createWorkers(5,urlShortenTask, toShortenList)
+	#createWorkers(5,urlShortenTask, toShortenList)
 
+	output=output+"<data>\n"
 	for photoSet in targetSets:
 		print photoSet["name"]
+		output=output+"<photoSet name='{}'>\n".format(photoSet["name"])
 
 		versionedPhotos=getVersionedPhotosBySet(photoSet)
 		for board,photos in versionedPhotos.iteritems():
 			print board
+			output=output+"<board type='{}'>\n".format(boardsTb[board][0])
 			makeShortLinkForBoard(photos,board,photoSet)
+			output=output+"</board>\n"
 
-			while toShortenList.qsize()>0:
-				mainDBWork()
-			mainDBWork()
+			#while toShortenList.qsize()>0:
+			#	mainDBWork()
+			#mainDBWork()
+		output=output+"</photoSet>\n"
+	output=output+"</data>\n"
 
 
 if __name__=="__main__":
+	global output
 	createShortLinks()
+
+	f=open("testRes.txt","w")
+	f.write(output)
+	f.close()
 	#updateLongURL("ctc-ua-02-07-1","google.com","google.com")
 	#expandShortURL("ctc-ua-02-07-15")
