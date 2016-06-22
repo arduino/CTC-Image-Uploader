@@ -49,7 +49,7 @@ def getYourlsToken():
 #
 #
 def yourlsAPI(action, postData):
-	url="{yourlsURL}/yourls-api.php?timestamp={timestamp}&signature={signature}&action={action}"
+	url="{yourlsURL}/yourls-api.php?timestamp={timestamp}&signature={signature}&action={action}&format=json"
 	signature, timestamp=getYourlsToken()
 	yourlsURL=yourls_URL
 	url=url.format(**locals())
@@ -104,6 +104,14 @@ def expandShortURL(shorturl):
 	return processYourlsResp(r.text)
 
 
+
+def updateLongURL(shorturl,longurl,title):
+	r=yourlsAPI("update",postData={
+		"shorturl":shorturl,
+		"url":longurl,
+		"title":title
+	})
+	return processYourlsResp(r.text)
 
 
 
@@ -199,6 +207,15 @@ def getShortURL(task):
 			shortURL=res["shorturl"]
 			return shortURL
 		elif res["code"]=="error:keyword":
+			print res["message"], "overwriting"
+			res2=updateLongURL(task["keyword"],task["hosted_url"],task["title"])
+			if "success" in res2["message"]:
+				print "overwritten "+task["keyword"]+" with "+task["hosted_url"]
+				return task["keyword"]
+			else:
+				print "Failed to overwrite "+photo_id
+				raise
+			'''
 			print res["message"], "attemp recovering"
 			res2=expandShortURL(keyword)
 			if res2["message"]=="success":
@@ -207,6 +224,7 @@ def getShortURL(task):
 					return res2["shorturl"]
 			else:
 				print "Failed to recover "+photo_id
+			'''
 	else:
 		return res
 
@@ -271,7 +289,7 @@ def getVersionedPhotosBySet(rec):
 	return resAll
 
 def makeShortLinkForBoard(photos,board,photoSet):
-	for i,photo in enumerate(photos):
+	for i,photo in enumerate(photos[:3]):
 		title,keyword=makeShortURL(photo,i,board,photoSet["name"])
 		#print title,keyword, photo["photo_id"]
 		toShortenList.put({"title":title, "keyword":keyword, "photo_id":photo["photo_id"], "hosted_url":photo["hosted_url"]})
@@ -305,3 +323,5 @@ def createShortLinks():
 
 if __name__=="__main__":
 	createShortLinks()
+	#updateLongURL("ctc-ua-02-07-1","google.com","google.com")
+	#expandShortURL("ctc-ua-02-07-15")
