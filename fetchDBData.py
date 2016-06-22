@@ -8,7 +8,7 @@ from mainDB import CTCPhotoDB
 # parameters you shouldn't touch too often
 ##################################
 # insert the database name
-filename = "data/LightroomCatalog.lrcat"
+filename = "data/Lightroom Catalog.lrcat"
 # database tables were we will perform the search
 dbTableCaptions = "AgLibraryIPTC"
 dbTableImages = "AgLibraryCollectionImage"
