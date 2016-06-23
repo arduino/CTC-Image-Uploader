@@ -314,19 +314,12 @@ def outputShortLinks():
 	global output
 	targetSets=getFullyUploadedSets(False)
 
-	for one in targetSets:
-		print one["name"]
-
-	raw_input()
-
 	output=output+"<data>\n"
 	for photoSet in targetSets:
-		print photoSet["name"]
 		output=output+"<photoSet name='{}'>\n".format(photoSet["name"])
 
 		versionedPhotos=getVersionedPhotosBySet(photoSet)
 		for board,photos in versionedPhotos.iteritems():
-			print board
 			output=output+"<board type='{}'>\n".format(boardsTb[board][0])
 			for i,photo in enumerate(photos):
 				title,keyword=makeShortURL(photo,i,board,photoSet["name"])
@@ -341,19 +334,21 @@ def createShortLinks():
 	#global output
 	targetSets=getFullyUploadedSets()
 
+	print "Photo sets needs to be processed:"
+
 	for one in targetSets:
 		print one["name"]
 
-	raw_input()
-
 	createWorkers(5,urlShortenTask, toShortenList)
 
+	print "Start generating short links"
+
 	for photoSet in targetSets:
-		print photoSet["name"]
+		print photoSet["name"],"############################################"
 
 		versionedPhotos=getVersionedPhotosBySet(photoSet)
 		for board,photos in versionedPhotos.iteritems():
-			print board
+			print board, "-----------------------"
 			makeShortLinkForBoard(photos,board,photoSet)
 
 			while toShortenList.qsize()>0:
@@ -363,6 +358,12 @@ def createShortLinks():
 		db.modifySetByID(photoSet["set_id"],shortlinked=1).commit()
 
 
+def createAndOutputShortLinks():
+	print "Creating short links"
+	createShortLinks()
+
+	print "Output short links to testRes.txt"
+	outputShortLinks()
 
 
 
