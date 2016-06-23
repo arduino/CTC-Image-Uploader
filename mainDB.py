@@ -41,7 +41,8 @@ class CTCPhotoDB:
 			set_id PRIMARY KEY,
 			name CHAR(125),
 			hosted_id CHAR(15),
-			state TINYINT
+			state TINYINT,
+			shortlinked TinyInt
 		);
 		''']
 
@@ -58,10 +59,10 @@ class CTCPhotoDB:
 	#
 	#
 	def addSet(self, pack):
-		ipt=updatedInput({"set_id":"","name":"","hosted_id":"","state":0},pack)
+		ipt=updatedInput({"set_id":"","name":"","hosted_id":"","state":0,"shortlinked":0},pack)
 		cmd='''
 		INSERT OR IGNORE INTO sets VALUES
-		('{set_id}','{name}','{hosted_id}','{state}')
+		('{set_id}','{name}','{hosted_id}','{state}','{shortlinked}')
 		'''.format(**ipt)
 
 		self.makeQuery(cmd)
@@ -114,6 +115,14 @@ class CTCPhotoDB:
 		set_id="'{}'".format(set_id)
 		return self.modifyRec("sets",{"set_id":set_id}, kwargs)
 
+	#
+	#	Remove hosted information about a photo set
+	#
+	#
+	def cleanSetByID(self, set_id):
+		return self.modifySetByID(set_id, state=0, hosted_id="''")
+
+
 
 	#
 	#	Set the hosted_id of a photo.
@@ -121,7 +130,7 @@ class CTCPhotoDB:
 	#
 	def setPhotoHostedID(self, photo_id, hosted_id):
 		hosted_id="'{}'".format(hosted_id)
-		self.modifyPhotoByID(photo_id,hosted_id=hosted_id,synced=1).commit()
+		self.modifyPhotoByID_UpdateSynced(photo_id,hosted_id=hosted_id,synced=1).commit()
 
 	#
 	#	Set the hosted_url of a photo.
@@ -135,10 +144,8 @@ class CTCPhotoDB:
 	#	Set the hosted_id of a photo.
 	#	The second bit of synced is set 1
 	#
-	def setPhotoAddedToSet(self, photo_id, set_id):
-		photo_id="'{}'".format(photo_id)
-		set_id="'{}'".format(set_id)
-		self.modifyRec("photos",{"photo_id":photo_id,"set_id":set_id},{"synced":2}).commit()
+	def setPhotoAddedToSet(self, photo_id):
+		self.modifyPhotoByID_UpdateSynced(photo_id, synced=2).commit()
 
 	#
 	#	Set the refering_url of a photo.
@@ -146,7 +153,7 @@ class CTCPhotoDB:
 	#
 	def setPhotoReferingURL(self, photo_id, refering_url):
 		refering_url="'{}'".format(refering_url)
-		self.modifyPhotoByID(photo_id,refering_url=refering_url, synced=4).commit()
+		self.modifyPhotoByID_UpdateSynced(photo_id,refering_url=refering_url, synced=4).commit()
 
 	#
 	#	Modify a photo by values set in kwargs
@@ -155,6 +162,26 @@ class CTCPhotoDB:
 	def modifyPhotoByID(self, photo_id, **kwargs):
 		photo_id="'{}'".format(photo_id)
 		return self.modifyRec("photos",{"photo_id":photo_id}, kwargs)
+
+	#
+	#	modifyPhotoByID And update synced field
+	#
+	#
+	def modifyPhotoByID_UpdateSynced(self, photo_id, **kwargs):
+		photo_id="'{}'".format(photo_id)
+
+		if "synced" in kwargs:
+			kwargs["synced"]="synced|{}".format(kwargs["synced"])
+
+		return self.modifyRec("photos",{"photo_id":photo_id}, kwargs)
+
+	#
+	#	Remove hosted information about a photo
+	#
+	#
+	def cleanPhotoByID(self, photo_id):
+		return self.modifyPhotoByID(photo_id, synced=0, hosted_url="''", refering_url="''", hosted_id="''")
+
 
 
 	#
@@ -165,9 +192,6 @@ class CTCPhotoDB:
 	def modifyRec(self, tb_name, where, toModify):
 		tmp=["{}={}".format(k,v) for (k,v) in where.items()]
 		where_list=" AND ".join(tmp)
-
-		if "synced" in toModify:
-			toModify["synced"]="synced|{}".format(toModify["synced"])
 
 		tmp=["{}={}".format(k,v) for (k,v) in toModify.items()]
 		update_list=",".join(tmp)

@@ -17,12 +17,11 @@ import flickrapi
 from configs import flickr_api_key, flickr_api_secret
 from mainDB import CTCPhotoDB
 
-
 db=CTCPhotoDB()
 
 f = flickrapi.FlickrAPI(flickr_api_key, flickr_api_secret)
 
-
+missingPhotoSet=[]
 
 
 #
@@ -77,14 +76,19 @@ def getPhotosInfoForAddingToSetsInFlickr():
 	return res[0]
 
 def addPhotoToFlickrSet(rec):
+	global missingPhotoSet
 	#set photos.synced to 2 once added to flickr set
 	try:
 		f.photosets.addPhoto(photoset_id=rec["setHid"], photo_id=rec["photoHid"])
 	except flickrapi.exceptions.FlickrError as e:
 		if e.code!=3:	#code 3: already in set. Often because it's the primary photo of the set.
-			print e,rec["photoHid"],rec["setHid"]
+			if e.code==1:	#photoset does not exist. Needs to create the set and add all photos to it
+				print "PhotoSet missing, adding to toFix queue"
+				missingPhotoSet.append(rec["set_id"])
+			else:
+				print e,rec["photoHid"],rec["setHid"]
 			return 0
-	db.setPhotoAddedToSet(rec["photo_id"],rec["set_id"])
+	db.setPhotoAddedToSet(rec["photo_id"])
 	#db.modifyPhotoSynced(rec["photo_id"], 2, rec["set_id"])
 	print "added to set: ",rec["photoHid"],rec["setHid"]
 
@@ -139,12 +143,53 @@ def orderFlickrSets():
 		orderFlickrSet(one)
 
 
+
+
+
+
+
+def unsetPhotosInSet(set_id):
+	cmd="""
+	UPDATE photos
+	SET synced=synced&~2
+	WHERE set_id='{}'
+	""".format(set_id)
+	db.makeQuery(cmd)[1].commit()
+
+
+
+#
+#
+#	Fix photosets that are missing from Flickr
+#	
+#	Create the set again and put photos in it. If it's complete, order it
+#
+#
+def fixMissingSetByID(set_id):
+	db.cleanSetByID(set_id).commit()
+	unsetPhotosInSet(set_id)
+
+def fixMissingSets():
+	global missingPhotoSet
+
+	if len(missingPhotoSet)>0:
+		print "Attempting to fix missing photosets"
+
+		for one in missingPhotoSet:
+			print "Resetting {}".format(one)
+			fixMissingSetByID(one)
+
+		CreateAndFillSets()
+
+
+
 #
 #	
 #	Main procedure
 #	1. Create the Flickr sets
 #	2. Add photos to the sets
 #	3. When all photos are added to sets, order them
+#	4. Fix the photosets missing from flickr
 #
 #	All scripts will run the parts of data they can work on. If the data is not workable,
 #	It'll stop safely 
@@ -154,5 +199,12 @@ def CreateAndFillSets():
 	addPhotosToFlickrSets()
 	orderFlickrSets()
 
+	fixMissingSets()
+
+
+
 if __name__=="__main__":
+	#unsetPhotosInSet(683635)
+	#addPhotoToFlickrSet({"photoHid":832566,"setHid":683635})
+	#quit()
 	CreateAndFillSets()

@@ -17,25 +17,25 @@ db=CTCPhotoDB()
 f = flickrapi.FlickrAPI(flickr_api_key, flickr_api_secret)
 
 
+
 def deletePhotoInFlickr(flickrPhotoID):
 	try:
 		res=f.photos.delete(photo_id=flickrPhotoID)
 	except FlickrError:
 		print "photo "+flickrPhotoID+" gone"
 
-def deletePhoto(photoID):
-	cmd="""
-	UPDATE photos
-	SET synced=0, hosted_url='', refering_url='', hosted_id=''
-	WHERE photo_id='{}'
-	"""
-	rec=db.getPhotoByID(photoID)
-	deletePhotoInFlickr(rec["hosted_id"])
 
-	db.makeQuery(cmd.format(photoID))
-	db.commit()
+def deletePhoto(photoID,doCommit=True):
+	photo=db.getPhotoByID(photoID)
+	deletePhotoInFlickr(photo["hosted_id"])
+
+	db.cleanPhotoByID(photoID)
+	if doCommit:
+		db.commit()
 
 	print "photo_id {} deleted".format(photoID)
+
+
 
 
 
@@ -46,26 +46,27 @@ def deletePhotoSetInFlickr(flickrAlbumID):
 	except FlickrError:
 		print "album "+flickrAlbumID+" gone"
 
+
 def deletePhotoSet(photoSetID):
-	cmd="""
-	UPDATE sets
-	SET state=0, hosted_id=''
-	WHERE set_id='{}'
-	"""
 	photoSet=db.getSetByID(photoSetID)
 	photos=db.getPhotosBySetID(photoSetID)
 
 	deletePhotoSetInFlickr(photoSet["hosted_id"])
-	db.makeQuery(cmd.format(photoSetID))
-	db.commit()
 
 	for one in photos:
-		deletePhoto(one["photo_id"])
+		deletePhoto(one["photo_id"],False)
+
+	db.cleanSetByID(photoSetID).commit()
 
 	print "set_id {} deleted".format(photoSetID)
 
+
+
+
+
 if __name__=="__main__":
 	pass
+	db.cleanSetByID(683635).commit()
 	#deletePhoto(823397)
 	#deletePhotoSet(683622)
 	#deletePhotoSet(683696)

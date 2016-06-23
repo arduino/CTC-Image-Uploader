@@ -1,3 +1,4 @@
+import sys
 import requests
 import sqlite3, Queue, threading
 import flickrapi
@@ -208,7 +209,7 @@ def getShortURL(task):
 			shortURL=res["shorturl"]
 			return shortURL
 		elif res["code"]=="error:keyword":
-			print res["message"], "overwriting"
+			print "Server Message: ", res["message"], ", overwriting"
 			res2=updateLongURL(task["keyword"],task["hosted_url"],task["title"])
 			if "success" in res2["message"]:
 				print "overwritten "+task["keyword"]+" with "+task["hosted_url"]
@@ -263,15 +264,19 @@ def saveShortLink(task):
 
 
 
-def getFullyUploadedSets():
+def getFullyUploadedSets(toDoOnly=True):
 	cmd='''
 	SELECT sets.set_id, sets.name
 	FROM photos JOIN sets ON photos.set_id==sets.set_id
-	--WHERE sets.shortLinkSynced == 1
+	{}
 	GROUP BY photos.set_id
 	HAVING COUNT(case when photos.synced & 2 == 0 then 1 else null end)==0
 	'''
-	res=db.makeQuery(cmd)[0].fetchall()
+	if toDoOnly:
+		where="WHERE sets.shortlinked == 0"
+	else:
+		where=""
+	res=db.makeQuery(cmd.format(where))[0].fetchall()
 	return res
 
 def getVersionedPhotosBySet(rec):
@@ -290,12 +295,12 @@ def getVersionedPhotosBySet(rec):
 	return resAll
 
 def makeShortLinkForBoard(photos,board,photoSet):
-	global output
+	#global output
 	for i,photo in enumerate(photos):
 		title,keyword=makeShortURL(photo,i,board,photoSet["name"])
 		#print title,keyword, photo["photo_id"]
-		output=output+"<photo>\n<filename>{}</filename>\n<shortlink>http://verkstad.cc/urler/{}</shortlink>\n</photo>\n".format(photo["file_name"],keyword)
-		#toShortenList.put({"title":title, "keyword":keyword, "photo_id":photo["photo_id"], "hosted_url":photo["hosted_url"]})
+		#output=output+"<photo>\n<filename>{}</filename>\n<shortlink>http://verkstad.cc/urler/{}</shortlink>\n</photo>\n".format(photo["file_name"],keyword)
+		toShortenList.put({"title":title, "keyword":keyword, "photo_id":photo["photo_id"], "hosted_url":photo["hosted_url"]})
 
 
 
@@ -305,12 +310,14 @@ def makeShortLinkForBoard(photos,board,photoSet):
 
 
 
-
-def createShortLinks():
+def outputShortLinks():
 	global output
-	targetSets=getFullyUploadedSets()
+	targetSets=getFullyUploadedSets(False)
 
-	#createWorkers(5,urlShortenTask, toShortenList)
+	for one in targetSets:
+		print one["name"]
+
+	raw_input()
 
 	output=output+"<data>\n"
 	for photoSet in targetSets:
@@ -321,22 +328,60 @@ def createShortLinks():
 		for board,photos in versionedPhotos.iteritems():
 			print board
 			output=output+"<board type='{}'>\n".format(boardsTb[board][0])
-			makeShortLinkForBoard(photos,board,photoSet)
+			for i,photo in enumerate(photos):
+				title,keyword=makeShortURL(photo,i,board,photoSet["name"])
+				output=output+"<photo>\n<filename>{}</filename>\n<shortlink>http://verkstad.cc/urler/{}</shortlink>\n</photo>\n".format(photo["file_name"],keyword)
 			output=output+"</board>\n"
 
-			#while toShortenList.qsize()>0:
-			#	mainDBWork()
-			#mainDBWork()
 		output=output+"</photoSet>\n"
 	output=output+"</data>\n"
 
 
+def createShortLinks():
+	#global output
+	targetSets=getFullyUploadedSets()
+
+	for one in targetSets:
+		print one["name"]
+
+	raw_input()
+
+	createWorkers(5,urlShortenTask, toShortenList)
+
+	for photoSet in targetSets:
+		print photoSet["name"]
+
+		versionedPhotos=getVersionedPhotosBySet(photoSet)
+		for board,photos in versionedPhotos.iteritems():
+			print board
+			makeShortLinkForBoard(photos,board,photoSet)
+
+			while toShortenList.qsize()>0:
+				mainDBWork()
+			mainDBWork()
+
+		db.modifySetByID(photoSet["set_id"],shortlinked=1).commit()
+
+
+
+
+
 if __name__=="__main__":
-	global output
-	createShortLinks()
+
+	if "--create" in sys.argv:
+		print "creating short links"
+		createShortLinks()
+	else:
+		print "output shortlinks only"	
+	
+	print "output shortlinks to testRes.txt"
+	outputShortLinks()
 
 	f=open("testRes.txt","w")
 	f.write(output)
 	f.close()
+
+	
+
 	#updateLongURL("ctc-ua-02-07-1","google.com","google.com")
 	#expandShortURL("ctc-ua-02-07-15")
