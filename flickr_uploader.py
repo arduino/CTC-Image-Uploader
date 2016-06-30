@@ -2,6 +2,7 @@
 import sys
 from bin.flickr_uploader.fetchDBData import fetchDBData
 from bin.flickr_uploader.MainProcedure import processAll
+from bin.flickr_uploader.tools import deletePhoto
 
 if __name__=="__main__":
 	args=sys.argv
@@ -14,6 +15,9 @@ if __name__=="__main__":
 		if cfm!="y":
 			quit()
 		fetchDBData()
+	elif "--deletePhoto" in args:
+		photoID=args[args.index("--deletePhoto")+1]
+		deletePhoto(photoID)
 	else:
 		print """
 	Please specify an operation.
