@@ -1,25 +1,25 @@
-import flickrapi
-
-from configs import flickr_api_key, flickr_api_secret
-
-from UploadPhotos import uploadPictures
-from CreateAndFillSets import CreateAndFillSets
-from fetchURL import fetchURL
-from CreateShortLinks import createAndOutputShortLinks
-
-f = flickrapi.FlickrAPI(flickr_api_key, flickr_api_secret)
+#import bin.flickr_uploader
+import sys
+from bin.flickr_uploader.fetchDBData import fetchDBData
+from bin.flickr_uploader.MainProcedure import processAll
 
 if __name__=="__main__":
-	f.authenticate_via_browser(perms='delete')
+	args=sys.argv
 
-	uploadPictures()
-	print "All pictures Uploaded"
+	if "--process" in args:
+		processAll()
+	elif "--fetchDB" in args:
+	    print "Some data will be lost with this operation. Press y to continue, other keys to quit."
+	    cfm=raw_input("")
+	    if cfm!="y":
+	        quit()
 
-	CreateAndFillSets()
-	print "All Sets created and filled"
-
-	fetchURL()
-	print "All hosted URLs saved"
-
-	createAndOutputShortLinks()
-	print "All short links created"
+		fetchDBData()
+	else:
+		print """
+	Please specify an operation.
+	--fetchDB
+		Update the database with new lightroom category
+	--process
+		Upload, create flickr sets, generate shortLinks
+		"""

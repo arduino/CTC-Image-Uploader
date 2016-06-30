@@ -1,4 +1,4 @@
-import sqlite3, datetime
+import sqlite3, datetime, os
 
 class CTCPhotoDB:
 	def __init__(self, db_file="maindb.db"):
@@ -292,6 +292,9 @@ def updatedInput(base, newData):
 
 
 if __name__=="__main__":
+	print os.path.realpath(".")
+	db=CTCPhotoDB()
+	print len(db.getAllPhotos())
 	'''
 	query=CTCPhotoDB()
 	query.createTables()

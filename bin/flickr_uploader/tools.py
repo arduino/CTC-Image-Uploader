@@ -66,7 +66,7 @@ def deletePhotoSet(photoSetID):
 
 if __name__=="__main__":
 	pass
-	db.cleanSetByID(683635).commit()
+	#db.cleanSetByID(683635).commit()
 	#deletePhoto(823397)
 	#deletePhotoSet(683622)
 	#deletePhotoSet(683696)

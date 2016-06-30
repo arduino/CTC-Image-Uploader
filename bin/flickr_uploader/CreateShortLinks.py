@@ -364,6 +364,10 @@ def createAndOutputShortLinks():
 
 	print "Output short links to testRes.txt"
 	outputShortLinks()
+	
+	f=open("testRes.txt","w")
+	f.write(output)
+	f.close()
 
 
 
@@ -378,9 +382,6 @@ if __name__=="__main__":
 	print "output shortlinks to testRes.txt"
 	outputShortLinks()
 
-	f=open("testRes.txt","w")
-	f.write(output)
-	f.close()
 
 	
 

@@ -176,16 +176,10 @@ def updateDB(photoDB, oldDBPath):
 
     photoDB.conn.commit()
 
-if __name__=="__main__":
-    print "Some data will be lost with this operation. \
-    \nPress y to continue, other keys to quit."
-    cfm=raw_input("")
-    if cfm!="y":
-        quit()
 
+def fetchDBData():
     if os.path.isfile(tmpdbPath):
-        print tmpdbPath+" already exists. \
-        \nRemove it manually if there's nothing important."
+        print tmpdbPath+" already exists."
         quit()
     os.rename(dbPath,tmpdbPath)
 
@@ -205,3 +199,14 @@ if __name__=="__main__":
     os.remove(tmpdbPath)
 
     print "All done."
+
+
+
+if __name__=="__main__":
+    print "Some data will be lost with this operation. Press y to continue, other keys to quit."
+    cfm=raw_input("")
+    if cfm!="y":
+        quit()
+
+    fetchDBData()
+
