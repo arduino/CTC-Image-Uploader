@@ -9,11 +9,10 @@ if __name__=="__main__":
 	if "--process" in args:
 		processAll()
 	elif "--fetchDB" in args:
-	    print "Some data will be lost with this operation. Press y to continue, other keys to quit."
-	    cfm=raw_input("")
-	    if cfm!="y":
-	        quit()
-
+		print "Some data will be lost with this operation. Press y to continue, other keys to quit."
+		cfm=raw_input("")
+		if cfm!="y":
+			quit()
 		fetchDBData()
 	else:
 		print """

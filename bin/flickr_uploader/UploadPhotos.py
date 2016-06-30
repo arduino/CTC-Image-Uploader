@@ -2,6 +2,8 @@ import flickrapi
 import threading, Queue
 import time, os
 
+from requests.exceptions import ConnectionError
+
 from configs import flickr_api_key, flickr_api_secret
 from mainDB import CTCPhotoDB
 
@@ -65,12 +67,17 @@ def uploadPhoto(index, queue):
 		filename=task["filename"]
 		rec=task["rec"]
 		print "worker {} uploading {}".format(index,filename)
-		res=f.upload(filename,title=rec["file_name"])
-		photoid=res.find("photoid").text
-		print photoid
-		db_queue.put({"taskName":"saveFlickrID","rec":rec,"photoid":photoid})
-		#print photoid
-		#time.sleep(2)
+		try:
+			res=f.upload(filename,title=rec["file_name"])
+		except ConnectionError:
+			print "Failed to upload "+filename+", try again later"
+			queue.put(task)
+		else:
+			photoid=res.find("photoid").text
+			print photoid
+			db_queue.put({"taskName":"saveFlickrID","rec":rec,"photoid":photoid})
+			#print photoid
+			#time.sleep(2)
 		queue.task_done()
 
 def createUploadWorkers(num):
@@ -180,7 +187,7 @@ def uploadPictures():
 		while True:
 			main_dbWork(db_queue)
 			#Limit the upload queue length to 100
-			if upload_queue.qsize()<100:
+			if upload_queue.qsize()<10:
 				break
 
 		print filename, "will be uploaded"

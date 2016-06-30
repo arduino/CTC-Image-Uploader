@@ -87,6 +87,7 @@ def addPhotoToFlickrSet(rec):
 				missingPhotoSet.append(rec["set_id"])
 			else:
 				print e,rec["photoHid"],rec["setHid"]
+				quit()
 			return 0
 	db.setPhotoAddedToSet(rec["photo_id"])
 	#db.modifyPhotoSynced(rec["photo_id"], 2, rec["set_id"])
