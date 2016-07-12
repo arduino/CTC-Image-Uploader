@@ -44,6 +44,17 @@ class CTCPhotoDB:
 			state TINYINT,
 			shortlinked TinyInt
 		);
+		''',
+		'''
+		CREATE TABLE IF NOT EXISTS extras(
+			ID PRIMARY KEY,
+			name CHAR(125),
+			type CHAR(15),
+			hosted_url CHAR(255),
+			set_id INT,
+			order_in_set INT,
+			state TINYINT,
+		);
 		''']
 
 		for cmd in cmds:
@@ -91,6 +102,29 @@ class CTCPhotoDB:
 		cmd='''
 		INSERT OR IGNORE INTO photos VALUES
 		('{ID}','{photo_id}','{file_name}','{set_id}','{folder}',{order_in_set},'{board_version}','{hosted_url}','{hosted_id}','{refering_url}','{last_updated}',{synced})
+		'''.format(**ipt)
+
+		self.makeQuery(cmd)
+
+	#
+	#	Add a record to extras table.
+	#	values must be packed into a dictionary.
+	#
+	#
+	def addExtra(self,pack):
+		basePack={
+			"ID":"",
+			"name":"",
+			"type":"",
+			"hosted_url":"",
+			"set_id":"",
+			"order_in_set":0,
+			"state":0
+		}
+		ipt=updatedInput(basePack,pack)
+		cmd='''
+		INSERT OR IGNORE INTO extras VALUES
+		('{ID}','{name}','{type}','{hosted_url}','{set_id}',{order_in_set},'{state}')
 		'''.format(**ipt)
 
 		self.makeQuery(cmd)
