@@ -1,8 +1,14 @@
 #
-#	type codes:
-#	y: youtube video
-#	g: github code
+# Process the excel sheets for youtube videos and github code
+# Retrive short url.
 #
+# type codes:
+# y: youtube video
+# g: github code
+#
+# state codes:
+# 0: not shortened
+# 1: shortened
 #
 import openpyxl
 from mainDB import CTCPhotoDB
@@ -13,19 +19,23 @@ codeSheetLocation="data/Github bitly sheet.xlsx"
 
 photoDB=CTCPhotoDB()
 
+
+#
+# Util function for getting the type name of an
+# extra record
+#
+#
 def getFullType(typeCode):
 	return { \
 		"y":"Youtube video", \
 		"g":"Github code" \
 	}[typeCode]
 
-def getSheet(sheetLocation):
-	wb = openpyxl.load_workbook(sheetLocation)
-	sheet=wb.active
-	return sheet
-
-#print sheet.max_row, sheet.max_column
-
+#
+# Util function for getting the in-set order 
+# by reading the last digits of a shortCode
+#
+#
 def getOrderInSet(shortCode):
 	identifier=shortCode.split("-")[-2:]
 	if identifier[0].isdigit():
@@ -33,6 +43,23 @@ def getOrderInSet(shortCode):
 	else:
 		return 0
 
+
+
+#
+# get the active sheet of a openpyxl object from a file 
+# location string
+#
+#
+def getSheet(sheetLocation):
+	wb = openpyxl.load_workbook(sheetLocation)
+	sheet=wb.active
+	return sheet
+
+#
+# Read data from the exel sheet of youtube videos and 
+# save it in the database
+#
+#
 def processVideoSheet():
 	sheet=getSheet(videoSheetLocation)
 	for row in range(1,sheet.max_row):
@@ -47,7 +74,11 @@ def processVideoSheet():
 	photoDB.commit()
 
 
-
+#
+# Read data from the exel sheet of github codes and 
+# save it in the database
+#
+#
 def processCodeSheet():
 	sheet=getSheet(codeSheetLocation)
 	for row in range(4,sheet.max_row):
@@ -62,13 +93,17 @@ def processCodeSheet():
 	photoDB.commit()
 
 
+#
+# Request short URL for extras, and save the progress as state
+#
+#
 def getShortURLForExtras():
 	cmd="""
 	SELECT * FROM extras
 	WHERE state == 0
 	"""
 	toGet=photoDB.makeQuery(cmd)[0].fetchall()
-	
+
 	for one in toGet[0:1]:
 		#print one["hosted_url"]
 		getShortURL({ \
