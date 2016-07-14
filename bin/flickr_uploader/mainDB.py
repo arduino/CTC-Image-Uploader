@@ -256,6 +256,13 @@ class CTCPhotoDB:
 		return self.getAllFromTable("sets")
 
 	#
+	#	Get all extras from the extras table 
+	#
+	def getAllExtras(self):
+		return self.getAllFromTable("extras")
+
+
+	#
 	#	Get everything from a table 
 	#
 	def getAllFromTable(self, tb_name):
