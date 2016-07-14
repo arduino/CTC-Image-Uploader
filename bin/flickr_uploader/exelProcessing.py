@@ -63,10 +63,17 @@ def processCodeSheet():
 
 
 def getShortURLForExtras():
-	for one in photoDB.getAllExtras()[0:1]:
+	cmd="""
+	SELECT * FROM extras
+	WHERE state == 0
+	"""
+	toGet=photoDB.makeQuery(cmd)[0].fetchall()
+	
+	for one in toGet[0:1]:
 		#print one["hosted_url"]
 		getShortURL({ \
 			"hosted_url":one["hosted_url"], \
 			"keyword":one["short_code"], \
 			"title":getFullType(one["type"])+" "+one["name"] \
 			})
+		photoDB.modifyExtraState(one["short_code"],1)

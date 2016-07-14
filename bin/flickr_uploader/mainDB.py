@@ -219,6 +219,23 @@ class CTCPhotoDB:
 
 
 	#
+	#	Modify the state of an extra record
+	#
+	#
+	def modifyExtraState(self,short_code,state):
+		short_code="'{}'".format(short_code)
+		self.modifyExtraByShortCode(short_code,state=state).commit()
+
+	#
+	#	Modify an extra by values set in kwargs
+	#
+	#
+	def modifyExtraByShortCode(self, short_code, **kwargs):
+		return self.modifyRec("extras",{"short_code":short_code}, kwargs)
+
+
+
+	#
 	#	Make a query to update records. 
 	#	Table name, update list, and where list are customizable.
 	#	The synced field can be set.
