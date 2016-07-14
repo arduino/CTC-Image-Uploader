@@ -47,13 +47,13 @@ class CTCPhotoDB:
 		''',
 		'''
 		CREATE TABLE IF NOT EXISTS extras(
-			ID PRIMARY KEY,
 			name CHAR(125),
 			type CHAR(15),
+			short_code CHAR(30) PRIMARY KEY,
 			hosted_url CHAR(255),
 			set_id INT,
 			order_in_set INT,
-			state TINYINT,
+			state TINYINT
 		);
 		''']
 
@@ -113,9 +113,9 @@ class CTCPhotoDB:
 	#
 	def addExtra(self,pack):
 		basePack={
-			"ID":"",
 			"name":"",
 			"type":"",
+			"short_code":"",
 			"hosted_url":"",
 			"set_id":"",
 			"order_in_set":0,
@@ -124,7 +124,7 @@ class CTCPhotoDB:
 		ipt=updatedInput(basePack,pack)
 		cmd='''
 		INSERT OR IGNORE INTO extras VALUES
-		('{ID}','{name}','{type}','{hosted_url}','{set_id}',{order_in_set},'{state}')
+		('{name}','{type}','{short_code}','{hosted_url}','{set_id}',{order_in_set},'{state}')
 		'''.format(**ipt)
 
 		self.makeQuery(cmd)
