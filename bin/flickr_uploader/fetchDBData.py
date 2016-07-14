@@ -160,6 +160,10 @@ def updateDB(photoDB, oldDBPath):
             state=(
             SELECT state!=0 FROM db2.sets
             WHERE set_id=main.sets.set_id)
+    ''',
+    '''
+        INSERT INTO main.extras
+        SELECT * FROM db2.extras
     ''']
     
     cmd2=['''
@@ -172,7 +176,10 @@ def updateDB(photoDB, oldDBPath):
     ''']
 
     for one in cmd:
-        cur.execute(one)
+        try:
+            cur.execute(one)
+        except sqlite3.OperationalError as e:
+            print e
 
     photoDB.conn.commit()
 
