@@ -223,7 +223,6 @@ class CTCPhotoDB:
 	#
 	#
 	def modifyExtraState(self,short_code,state):
-		short_code="'{}'".format(short_code)
 		self.modifyExtraByShortCode(short_code,state=state).commit()
 
 	#
@@ -231,6 +230,7 @@ class CTCPhotoDB:
 	#
 	#
 	def modifyExtraByShortCode(self, short_code, **kwargs):
+		short_code="'{}'".format(short_code)
 		return self.modifyRec("extras",{"short_code":short_code}, kwargs)
 
 
@@ -310,6 +310,14 @@ class CTCPhotoDB:
 		set_id="'{}'".format(set_id)
 		res=self.getRecByField("photos","set_id",set_id)
 		return res.fetchall()
+
+	#
+	#	Get an extra rec by its short_code field 
+	#
+	def getExtraByShortCode(self,short_code):
+		short_code="'{}'".format(short_code)
+		res=self.getRecByField("extras","short_code",short_code)
+		return res.fetchone()
 
 	#
 	#	Get records by specifying table name, field and value to query 

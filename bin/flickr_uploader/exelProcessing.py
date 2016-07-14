@@ -43,6 +43,16 @@ def getOrderInSet(shortCode):
 	else:
 		return 0
 
+#
+# Check if every field in toCompare object matches 
+# the one in base
+#
+#
+def recNotMatch(toCompare, base):
+	for key in toCompare:
+		if toCompare[key]!=base[key]:
+			return True
+	return False
 
 
 #
@@ -54,6 +64,26 @@ def getSheet(sheetLocation):
 	wb = openpyxl.load_workbook(sheetLocation)
 	sheet=wb.active
 	return sheet
+
+#
+# Depending on if a record exists/is identical to the new one,
+# make a new record/update the old record/do nothing
+#
+#
+def addNewOrUpdateOld(newRec):
+	shortCode=newRec["short_code"]
+	oldRec=photoDB.getExtraByShortCode(shortCode)
+	if oldRec==None:
+		newRec["short_code"]=shortCode
+		photoDB.addExtra(newRec)
+	elif recNotMatch(newRec,oldRec):
+		newRec["state"]=0
+		del newRec["short_code"]
+		for key in newRec:
+			if not (type(newRec[key]) is int):
+				newRec[key]="'{}'".format(newRec[key])
+		photoDB.modifyExtraByShortCode(shortCode, **newRec)
+
 
 #
 # Read data from the exel sheet of youtube videos and 
@@ -69,8 +99,8 @@ def processVideoSheet():
 		if shortCode!=None and link!=None:
 			orderInSet=getOrderInSet(shortCode)
 			shortCode="ctc-y-"+shortCode
-			photoDB.addExtra({"name":name, "short_code":shortCode, "hosted_url":link, "type":"y", "order_in_set":orderInSet})
-			print name, shortCode
+			newRec={"name":name, "short_code":shortCode, "hosted_url":link, "type":"y", "order_in_set":orderInSet}
+			addNewOrUpdateOld(newRec)
 	photoDB.commit()
 
 
@@ -88,8 +118,8 @@ def processCodeSheet():
 		if shortCode!=None and link!=None:
 			orderInSet=getOrderInSet(shortCode)
 			shortCode="ctc-g-"+shortCode
-			photoDB.addExtra({"name":name, "short_code":shortCode, "hosted_url":link, "type":"g", "order_in_set":orderInSet})
-			print name, shortCode
+			newRec={"name":name, "short_code":shortCode, "hosted_url":link, "type":"g", "order_in_set":orderInSet}
+			addNewOrUpdateOld(newRec)
 	photoDB.commit()
 
 
