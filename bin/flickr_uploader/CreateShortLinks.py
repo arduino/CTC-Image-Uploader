@@ -187,8 +187,16 @@ def makeShortURL(rec,idx,board,set_name):
 	board_name=boardsTb[board][0]
 	board_code=boardsTb[board][1]
 
-	title="CTC {} slideshow {} {}".format(board_name, set_name, idx)
-	keyword="ctc-{}-{}-{}".format(board_code, set_name.split(" ")[1], str(idx))
+	if set_name.endswith("nonslideshow"):
+		set_type="nonslideshow"
+		set_name=set_name[0:-14]
+		keyword="ctc-ns-{}-{}-{}"
+	else:
+		set_type="slideshow"
+		keyword="ctc-{}-{}-{}"
+
+	title="CTC {} {} {} {}".format(board_name, set_type, set_name, idx)
+	keyword=keyword.format(board_code, set_name.split(" ")[1], str(idx))
 
 	return title, keyword
 
