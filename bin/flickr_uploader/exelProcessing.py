@@ -89,6 +89,10 @@ def addNewOrUpdateOld(newRec):
 		photoDB.modifyExtraByShortCode(shortCode, **newRec)
 
 
+
+
+
+
 #
 # Read data from the exel sheet of youtube videos and 
 # save it in the database
@@ -127,27 +131,14 @@ def processCodeSheet():
 	photoDB.commit()
 
 
-#
-# Request short URL for extras, and save the progress as state
-#
-#
-def getShortURLForExtras_single():
-	cmd="""
-	SELECT * FROM extras
-	WHERE state == 0
-	"""
-	toGet=photoDB.makeQuery(cmd)[0].fetchall()
-
-	for one in toGet[0:1]:
-		#print one["hosted_url"]
-		getShortURL({ \
-			"hosted_url":one["hosted_url"], \
-			"keyword":one["short_code"], \
-			"title":getFullType(one["type"])+" "+one["name"] \
-			})
-		photoDB.modifyExtraState(one["short_code"],1)
 
 
+
+
+#
+# Get all records from extras table that hasn't been shortened
+#
+#
 def getUnshortenedExtras():
 	cmd="""
 	SELECT * FROM extras
@@ -156,6 +147,11 @@ def getUnshortenedExtras():
 	res=photoDB.makeQuery(cmd)[0].fetchall()
 	return res
 
+#
+# MultiThreadWork task for getting the short URL and regist a
+# database task
+#
+#
 def shortenExtra(workerIndex, rec):
 	res=getShortURL({ \
 		"hosted_url":rec["hosted_url"], \
@@ -165,9 +161,18 @@ def shortenExtra(workerIndex, rec):
 	if res:
 		mainTW.addTask("saveState",rec["short_code"])
 
+#
+# MultiTaskSingleThreadWork task for changing an extra record
+# as shortened
+#
+#
 def saveState(task):
 	photoDB.modifyExtraState(task,1)
 
+#
+# The main procedure for getting extras shortlinks 
+#
+#
 def getShortURLForExtras():
 	tw.setActualTask(shortenExtra)
 
