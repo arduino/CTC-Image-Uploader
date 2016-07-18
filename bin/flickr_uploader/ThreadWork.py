@@ -43,6 +43,9 @@ class MultiTaskSingleThreadWork(ThreadWork):
 		ThreadWork.__init__(self)
 		self.runnerTable={}
 
+	def addTask(self, task_name, content):
+		self.queue.put({"task_name":task_name,"content":content})
+
 	def addActualTaskType(self, task_name, func):
 		self.runnerTable[task_name]=func
 
@@ -52,7 +55,7 @@ class MultiTaskSingleThreadWork(ThreadWork):
 				task=self.queue.get(False)
 			except Queue.Empty:
 				break
-			self.runnerTable[task["task_name"]](task)
+			self.runnerTable[task["task_name"]](task["content"])
 
 
 
