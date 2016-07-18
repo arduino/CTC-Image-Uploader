@@ -13,11 +13,15 @@
 import openpyxl
 from mainDB import CTCPhotoDB
 from CreateShortLinks import getShortURL
+from ThreadWork import MultiThreadWork, MultiTaskSingleThreadWork
 
 videoSheetLocation="data/CSV ctc vid.xlsx"
 codeSheetLocation="data/Github bitly sheet.xlsx"
 
 photoDB=CTCPhotoDB()
+
+tw=MultiThreadWork(3)
+mainTW=MultiTaskSingleThreadWork()
 
 
 #
@@ -127,7 +131,7 @@ def processCodeSheet():
 # Request short URL for extras, and save the progress as state
 #
 #
-def getShortURLForExtras():
+def getShortURLForExtras_single():
 	cmd="""
 	SELECT * FROM extras
 	WHERE state == 0
@@ -142,3 +146,40 @@ def getShortURLForExtras():
 			"title":getFullType(one["type"])+" "+one["name"] \
 			})
 		photoDB.modifyExtraState(one["short_code"],1)
+
+
+def getUnshortenedExtras():
+	cmd="""
+	SELECT * FROM extras
+	WHERE state == 0
+	"""
+	res=photoDB.makeQuery(cmd)[0].fetchall()
+	return res
+
+def shortenExtra(workerIndex, rec):
+	res=getShortURL({ \
+		"hosted_url":rec["hosted_url"], \
+		"keyword":rec["short_code"], \
+		"title":getFullType(rec["type"])+" "+rec["name"] \
+		})
+	if res:
+		mainTW.addTask("saveState",rec["short_code"])
+
+def saveState(task):
+	photoDB.modifyExtraState(task,1)
+
+def getShortURLForExtras():
+	tw.setActualTask(shortenExtra)
+
+	mainTW.addActualTaskType("saveState",saveState)
+
+	unshortenedExtras=getUnshortenedExtras()
+	for one in unshortenedExtras[0:6]:
+		print one["short_code"]
+		tw.addTask(one)
+
+	while tw.processing():
+		mainTW.process()
+	tw.join()
+	mainTW.process()
+
