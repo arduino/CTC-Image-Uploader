@@ -162,6 +162,11 @@ def updateDB(photoDB, oldDBPath):
             WHERE set_id=main.sets.set_id)
     ''',
     '''
+        UPDATE sets
+        SET state=0, hosted_id=""
+        WHERE state is NULL
+    ''',
+    '''
         INSERT INTO main.extras
         SELECT * FROM db2.extras
     ''']
