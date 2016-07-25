@@ -187,8 +187,8 @@ def makeShortURL(rec,idx,board,set_name):
 	board_name=boardsTb[board][0]
 	board_code=boardsTb[board][1]
 
-	if set_name.endswith("nonslideshow"):
-		set_type="nonslideshow"
+	if set_name.endswith("noneslideshow"):
+		set_type="noneslideshow"
 		set_name=set_name[0:-14]
 		keyword="ctc-ns-{}-{}-{}"
 	else:
@@ -380,7 +380,7 @@ def createAndOutputShortLinks():
 
 
 if __name__=="__main__":
-
+	'''
 	if "--create" in sys.argv:
 		print "creating short links"
 		createShortLinks()
@@ -389,9 +389,12 @@ if __name__=="__main__":
 	
 	print "output shortlinks to testRes.txt"
 	outputShortLinks()
-
-
+	'''
+	rec=db.getPhotoByID("863288")
+	print makeShortURL(rec,0,"uno_gen","Block 01-01 Red Snake noneslideshow")
 	
+	rec=db.getPhotoByID("723217")
+	print makeShortURL(rec,2,"uno_gen","Block 03-06 POV")
 
 	#updateLongURL("ctc-ua-02-07-1","google.com","google.com")
 	#expandShortURL("ctc-ua-02-07-15")
