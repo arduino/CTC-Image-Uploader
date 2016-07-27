@@ -5,6 +5,7 @@
 # type codes:
 # y: youtube video
 # g: github code
+# f: fritzing code
 #
 # state codes:
 # 0: not shortened
@@ -17,6 +18,7 @@ from ThreadWork import MultiThreadWork, MultiTaskSingleThreadWork
 
 videoSheetLocation="data/CSV ctc vid.xlsx"
 codeSheetLocation="data/Github bitly sheet.xlsx"
+fritzingSheetLocation="data/FritzingSheet.xlsx"
 
 photoDB=CTCPhotoDB()
 
@@ -130,6 +132,25 @@ def processCodeSheet():
 			addNewOrUpdateOld(newRec)
 	photoDB.commit()
 
+
+#
+# Read data from the exel sheet of github codes and 
+# save it in the database
+#
+#
+def processFritzingSheet():
+	sheet=getSheet(fritzingSheetLocation)
+	for row in range(1,sheet.max_row+1):
+		name=sheet.cell(row=row,column=1).value
+		link=sheet.cell(row=row,column=2).value
+		shortCode=sheet.cell(row=row,column=3).value
+		if shortCode!=None and link!=None:
+			orderInSet=getOrderInSet(shortCode)
+			shortCode="ctc-frz-"+shortCode
+			newRec={"name":name, "short_code":shortCode, "hosted_url":link, "type":"f", "order_in_set":orderInSet}
+			addNewOrUpdateOld(newRec)
+			print newRec
+	photoDB.commit()
 
 
 
