@@ -100,7 +100,7 @@ def addNewOrUpdateOld(newRec):
 #
 def processVideoSheet():
 	sheet=getSheet(videoSheetLocation)
-	for row in range(1,sheet.max_row):
+	for row in range(1,sheet.max_row+1):
 		name=sheet.cell(row=row,column=1).value
 		link=sheet.cell(row=row,column=2).value
 		shortCode=sheet.cell(row=row,column=3).value
@@ -119,7 +119,7 @@ def processVideoSheet():
 #
 def processCodeSheet():
 	sheet=getSheet(codeSheetLocation)
-	for row in range(4,sheet.max_row):
+	for row in range(4,sheet.max_row+1):
 		name=sheet.cell(row=row,column=1).value
 		link=sheet.cell(row=row,column=3).value
 		shortCode=sheet.cell(row=row,column=5).value
