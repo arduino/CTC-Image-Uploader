@@ -25,18 +25,18 @@ photoDB=CTCPhotoDB()
 tw=MultiThreadWork(3)
 mainTW=MultiTaskSingleThreadWork()
 
-
+typeCodes={ \
+		"y":"Youtube video", \
+		"g":"Github code", \
+		"frz":"Fritzing Image" \
+		}
 #
 # Util function for getting the type name of an
 # extra record
 #
 #
 def getFullType(typeCode):
-	return { \
-		"y":"Youtube video", \
-		"g":"Github code", \
-		"frz":"Fritzing Image"
-	}[typeCode]
+	return typeCodes[typeCode]
 
 #
 # Util function for getting the in-set order 
@@ -209,4 +209,20 @@ def getShortURLForExtras():
 		mainTW.process()
 	tw.join()
 	mainTW.process()
+
+
+def outputXML():
+	outputFile=open("testExtras.txt","w")
+	
+	output="<data>\n"
+	for typeCode in typeCodes:
+		output=output+"<category type='"+getFullType(typeCode)+"'>\n"
+		recs=photoDB.getRecByField("extras","type","'"+typeCode+"'").fetchall()
+		for rec in recs:
+			output=output+"<rec>\n<title>{}</title>\n<link>{}</link>\n</rec>\n".format(rec["name"],"http://verkstad.cc/urler/"+rec["short_code"])
+		output=output+"</category>\n"
+	output=output+"</data>\n"
+	
+	outputFile.write(output)
+	outputFile.close()
 
