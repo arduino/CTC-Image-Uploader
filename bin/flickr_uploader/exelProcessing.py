@@ -5,7 +5,7 @@
 # type codes:
 # y: youtube video
 # g: github code
-# f: fritzing code
+# frz: fritzing code
 #
 # state codes:
 # 0: not shortened
@@ -34,7 +34,8 @@ mainTW=MultiTaskSingleThreadWork()
 def getFullType(typeCode):
 	return { \
 		"y":"Youtube video", \
-		"g":"Github code" \
+		"g":"Github code", \
+		"frz":"Fritzing Image"
 	}[typeCode]
 
 #
@@ -200,7 +201,7 @@ def getShortURLForExtras():
 	mainTW.addActualTaskType("saveState",saveState)
 
 	unshortenedExtras=getUnshortenedExtras()
-	for one in unshortenedExtras[0:6]:
+	for one in unshortenedExtras:
 		print one["short_code"]
 		tw.addTask(one)
 
