@@ -27,6 +27,9 @@ def deletePhotoInFlickr(flickrPhotoID):
 
 def deletePhoto(photoID,doCommit=True):
 	photo=db.getPhotoByID(photoID)
+	if photo["hosted_id"]=="":
+		return 
+
 	deletePhotoInFlickr(photo["hosted_id"])
 
 	db.cleanPhotoByID(photoID)
@@ -51,7 +54,10 @@ def deletePhotoSet(photoSetID):
 	photoSet=db.getSetByID(photoSetID)
 	photos=db.getPhotosBySetID(photoSetID)
 
-	deletePhotoSetInFlickr(photoSet["hosted_id"])
+	if photoSet["hosted_id"]!="":
+		deletePhotoSetInFlickr(photoSet["hosted_id"])
+	else:
+		print "photoSet {} is not hosted".format(photoSetID)
 
 	for one in photos:
 		deletePhoto(one["photo_id"],False)
@@ -60,7 +66,32 @@ def deletePhotoSet(photoSetID):
 
 	print "set_id {} deleted".format(photoSetID)
 
+def deleteAllPhotoSets():
+	photoSets=db.getAllSets()
 
+	for one in photoSets:
+		deletePhotoSet(one["set_id"])
+
+	print "All Deleted"
+
+
+def flickrDeletePhotosetFully(set_hosted_ID)
+	try:
+		res=f.photosets.getPhotos(photoset_id=set_hosted_ID)
+	except Exception as e:
+		print e
+	else:
+		photos=res.find("photoset").findall("photo")
+		for one in photos:
+			photo_id=one.attrib["id"]
+			print photo_id
+			f.photos.delete(photo_id=photo_id)
+
+	try:
+		f.photosets.delete(photoset_id=set_hosted_ID)
+	except Exception as e:
+		print e
+	print "photoset {} deleted".format(set_hosted_ID)
 
 
 
@@ -68,5 +99,6 @@ if __name__=="__main__":
 	pass
 	#db.cleanSetByID(683635).commit()
 	#deletePhoto(823397)
-	#deletePhotoSet(683622)
+	#deletePhotoSet(683587)
 	#deletePhotoSet(683696)
+	deleteAllPhotoSets()
