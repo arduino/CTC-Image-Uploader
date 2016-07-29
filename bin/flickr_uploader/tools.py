@@ -75,7 +75,7 @@ def deleteAllPhotoSets():
 	print "All Deleted"
 
 
-def flickrDeletePhotosetFully(set_hosted_ID)
+def flickrDeletePhotosetFully(set_hosted_ID):
 	try:
 		res=f.photosets.getPhotos(photoset_id=set_hosted_ID)
 	except Exception as e:
@@ -101,4 +101,5 @@ if __name__=="__main__":
 	#deletePhoto(823397)
 	#deletePhotoSet(683587)
 	#deletePhotoSet(683696)
-	deleteAllPhotoSets()
+	#deleteAllPhotoSets()
+	#flickrDeletePhotosetFully(1234)
