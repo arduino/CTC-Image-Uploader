@@ -181,21 +181,25 @@ def getUnShortenedPhotos():
 
 
 def makeShortURL(rec,idx,board,set_name):
-	photo_id=rec["photo_id"]
+	#photo_id=rec["photo_id"]
 	hosted_url=rec["hosted_url"]
 	
 	board_name=boardsTb[board][0]
 	board_code=boardsTb[board][1]
 
-	if set_name.endswith("noneslideshow"):
-		set_type="noneslideshow"
-		set_name=set_name[0:-14]
-		keyword="ctc-ns-{}-{}-{}"
-	else:
-		set_type="slideshow"
-		keyword="ctc-{}-{}-{}"
+	keyword="ctc-"
+	if set_name.startswith("References"):
+		keyword=keyword+"ref-"
+	elif set_name.startswith("Concept"):
+		keyword=keyword+"con-"
 
-	title="CTC {} {} {} {}".format(board_name, set_type, set_name, idx)
+	if set_name.endswith("Noneslideshow"):
+		keyword=keyword+"ns-"
+
+	keyword=keyword+"{}-{}-{}"
+
+
+	title="CTC {} {} {}".format(board_name, set_name, idx)
 	keyword=keyword.format(board_code, set_name.split(" ")[1], str(idx))
 
 	return title, keyword
@@ -390,11 +394,19 @@ if __name__=="__main__":
 	print "output shortlinks to testRes.txt"
 	outputShortLinks()
 	'''
+
+	'''
+	rec=db.getPhotoByID("863288")
+	print makeShortURL(rec,0,"uno_gen","Block 01-01 Red Snake Noneslideshow")
 	rec=db.getPhotoByID("863288")
 	print makeShortURL(rec,0,"uno_gen","Block 01-01 Red Snake noneslideshow")
-	
 	rec=db.getPhotoByID("723217")
 	print makeShortURL(rec,2,"uno_gen","Block 03-06 POV")
-
+	rec=db.getPhotoByID("864643")
+	print makeShortURL(rec,2,"uno_gen","Concept 04-02 Types Of Motors Noneslideshow")
+	rec=db.getPhotoByID("865699")
+	print makeShortURL(rec,1,"101_gen","References 29 Potentiometer Noneslideshow")
+	'''
+	
 	#updateLongURL("ctc-ua-02-07-1","google.com","google.com")
 	#expandShortURL("ctc-ua-02-07-15")
