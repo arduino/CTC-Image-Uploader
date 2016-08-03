@@ -125,7 +125,7 @@ def extractAndPopulate(photoDB):
         photoDB.commit();
             ### Save the resultList into new db and do stuff
 
-def updateDB(photoDB, oldDBPath):
+def updateDB(photoDB, oldDBPath,keepSetOrderedState=False):
     cur=photoDB.conn.cursor()
     cur.execute('ATTACH DATABASE "{}" AS db2'.format(oldDBPath))
     #cur.execute('SELECT db2.photos.folder, main.photos.photo_id FROM db2.photos INNER JOIN main.photos WHERE db2.photos.synced==7')
@@ -158,9 +158,9 @@ def updateDB(photoDB, oldDBPath):
             SELECT hosted_id FROM db2.sets
             WHERE set_id=main.sets.set_id),
             state=(
-            SELECT state!=0 FROM db2.sets
+            SELECT state{} FROM db2.sets
             WHERE set_id=main.sets.set_id)
-    ''',
+    '''.format("" if keepSetOrderedState else "!=0"),
     '''
         UPDATE sets
         SET state=0, hosted_id=""
@@ -189,7 +189,7 @@ def updateDB(photoDB, oldDBPath):
     photoDB.conn.commit()
 
 
-def fetchDBData():
+def fetchDBData(keepSetOrderedState=False):
     if os.path.isfile(tmpdbPath):
         print tmpdbPath+" already exists."
         quit()
@@ -204,7 +204,7 @@ def fetchDBData():
     extractAndPopulate(photoDB)
 
     print "Updating tables with existing data..."
-    updateDB(photoDB,tmpdbPath)
+    updateDB(photoDB,tmpdbPath,keepSetOrderedState)
     
     print "Cleaning up..."
     photoDB.close()

@@ -10,11 +10,15 @@ if __name__=="__main__":
 	if "--process" in args:
 		processAll()
 	elif "--fetchDB" in args:
-		print "Some data will be lost with this operation. Press y to continue, other keys to quit."
-		cfm=raw_input("")
-		if cfm!="y":
-			quit()
-		fetchDBData()
+		if "--dont_reorder_sets" in args:
+			keepSetsOrder=True
+		else:
+			print "Some data will be lost with this operation. Press y to continue, other keys to quit."
+			cfm=raw_input("")
+			if cfm!="y":
+				quit()
+			keepSetsOrder=False
+		fetchDBData(keepSetsOrder)
 	elif "--deletePhoto" in args:
 		photoID=args[args.index("--deletePhoto")+1]
 		deletePhoto(photoID)
@@ -23,6 +27,11 @@ if __name__=="__main__":
 	Please specify an operation.
 	--fetchDB
 		Update the database with new lightroom category
+
+		--dont_reorder_sets
+			Keep the "ordered" flag for all photosets. 
+			If nothing has been rearranged use this flag.
+			
 	--process
 		Upload, create flickr sets, generate shortLinks
 		"""
