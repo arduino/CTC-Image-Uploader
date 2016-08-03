@@ -159,6 +159,9 @@ def updateDB(photoDB, oldDBPath,keepSetOrderedState=False):
             WHERE set_id=main.sets.set_id),
             state=(
             SELECT state{} FROM db2.sets
+            WHERE set_id=main.sets.set_id),
+            shortlinked=(
+            SELECT shortlinked FROM db2.sets
             WHERE set_id=main.sets.set_id)
     '''.format("" if keepSetOrderedState else "!=0"),
     '''
