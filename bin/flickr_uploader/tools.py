@@ -17,7 +17,10 @@ db=CTCPhotoDB()
 f = flickrapi.FlickrAPI(flickr_api_key, flickr_api_secret)
 
 
-
+#
+# Delete a single photo from Flickr and keep it tracked in db
+#
+#
 def deletePhotoInFlickr(flickrPhotoID):
 	try:
 		res=f.photos.delete(photo_id=flickrPhotoID)
@@ -43,6 +46,11 @@ def deletePhoto(photoID,doCommit=True):
 
 
 
+#
+# Delete all photos belonging to a set, and the set itself 
+# from Flickr. And keep it tracked in db
+#
+#
 def deletePhotoSetInFlickr(flickrAlbumID):
 	try:
 		f.photosets.delete(photoset_id=flickrAlbumID)
@@ -75,6 +83,12 @@ def deleteAllPhotoSets():
 	print "All Deleted"
 
 
+
+
+#
+# Delete an untracked photoset and all its photos from flickr
+#
+#
 def flickrDeletePhotosetFully(set_hosted_ID):
 	try:
 		res=f.photosets.getPhotos(photoset_id=set_hosted_ID)
@@ -94,6 +108,16 @@ def flickrDeletePhotosetFully(set_hosted_ID):
 	print "photoset {} deleted".format(set_hosted_ID)
 
 
+
+#
+# Mark a photoset and all its photos as not shortlinked.
+#
+#
+def markSetForShorLinks(set_id):
+	set_id="'{}'".format(set_id)
+	db.modifyRec("sets",{"set_id":set_id},{"shortlinked":0})
+	db.modifyRec("photos",{"set_id":set_id},{"synced":"synced&3"})
+	db.commit()
 
 if __name__=="__main__":
 	pass
