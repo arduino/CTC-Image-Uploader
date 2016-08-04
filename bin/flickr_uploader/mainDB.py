@@ -154,7 +154,7 @@ class CTCPhotoDB:
 	#
 	#
 	def cleanSetByID(self, set_id):
-		return self.modifySetByID(set_id, state=0, hosted_id="''")
+		return self.modifySetByID(set_id, state=0, shortlinked=0, hosted_id="''")
 
 
 
