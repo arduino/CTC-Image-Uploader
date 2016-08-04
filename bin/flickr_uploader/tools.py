@@ -107,7 +107,18 @@ def flickrDeletePhotosetFully(set_hosted_ID):
 		print e
 	print "photoset {} deleted".format(set_hosted_ID)
 
-
+def flickrDeletePhotosByFilename(filename):
+	try:
+		res=f.photos.search(user_id="me",text=filename)
+	except Exception as e:
+		print e
+	else:
+		photos=res.find("photos").findall("photo")
+		print res.find("photos").attrib["total"]
+		for one in photos:
+			photo_id=one.attrib["id"]
+			f.photos.delete(photo_id=photo_id)
+			print photo_id+"Deleted"
 
 #
 # Mark a photoset and all its photos as not shortlinked.
@@ -119,11 +130,28 @@ def markSetForShorLinks(set_id):
 	db.modifyRec("photos",{"set_id":set_id},{"synced":"synced&3"})
 	db.commit()
 
+def markSetsForShortLinksByPhotoID(photo_id):
+	cmd="""
+	UPDATE sets
+	SET shortlinked=0
+	WHERE set_id IN
+		(
+		SELECT sets.set_id 
+		FROM sets
+		INNER JOIN photos
+		ON sets.set_id==photos.set_id
+		WHERE photos.photo_id=='{}'
+		)
+	""".format(photo_id)
+	db.makeQuery(cmd)
+	db.commit()
+
 if __name__=="__main__":
 	pass
 	#db.cleanSetByID(683635).commit()
 	#deletePhoto(823397)
-	#deletePhotoSet(683587)
-	#deletePhotoSet(683696)
+	#deletePhotoSet("684603")
 	#deleteAllPhotoSets()
 	#flickrDeletePhotosetFully(1234)
+	#flickrDeletePhotosByFilename("P9040276")
+	markSetsForShortLinksByPhotoID("841850")
