@@ -27,6 +27,7 @@ def getPhotosHIDForFlickr():
 	SELECT *
 	FROM photos 
 	WHERE hosted_url == "" AND synced & 1 == 1
+	GROUP BY hosted_id
 	'''
 	return db.makeQuery(cmd)[0].fetchall()
 
@@ -63,7 +64,7 @@ def getFlickrURL(rec):
 #
 def saveFlickrURL(data):
 	db.setPhotoHostedURL(data["photo_id"],hosted_url=data["hosted_url"])
-	print data["photo_id"]," saved"
+	print data["photo_id"],"hosted url saved"
 
 #
 #	Worker task of handling Flickr URLs

@@ -10,6 +10,7 @@ from mainDB import CTCPhotoDB
 
 upload_queue=Queue.Queue()
 upload_workers=[]
+upload_queue_filenames=[]
 
 db_queue=Queue.Queue()
 
@@ -66,15 +67,15 @@ def uploadPhoto(index, queue):
 		task=queue.get()
 		filename=task["filename"]
 		rec=task["rec"]
-		print "worker {} uploading {}".format(index,filename)
+		#print "worker {} uploading {}".format(index,filename)
 		try:
 			res=f.upload(filename,title=rec["file_name"])
 		except ConnectionError:
-			print "Failed to upload "+filename+", try again later"
+			print "worker {} failed to upload {}, try again later".format(index,filename)
 			queue.put(task)
 		else:
 			photoid=res.find("photoid").text
-			print photoid
+			print "worker {} succeeded at uploading {} as {}".format(index,filename, photoid)
 			db_queue.put({"taskName":"saveFlickrID","rec":rec,"photoid":photoid})
 			#print photoid
 			#time.sleep(2)
@@ -114,7 +115,7 @@ def main_dbWork(queue):
 			saveSetIDToFolder(rec)
 
 def saveFlickrID(rec,flickr_id):
-	print rec["photo_id"],flickr_id
+	#print rec["photo_id"],flickr_id
 	db.setPhotoHostedID(rec["photo_id"],flickr_id)
 
 #
@@ -181,17 +182,21 @@ def uploadPictures():
 		#photo_id will be designated the same folder. Which means an existing file
 		#location will be set to all photo records with the same photo id.
 		if one["folder"]=="":
-			db_queue.put({"taskName":"saveSetIDToFolder","rec":one})
+			#db_queue.put({"taskName":"saveSetIDToFolder","rec":one})
+			saveSetIDToFolder(one)
+
+		if filename not in upload_queue_filenames:
+			print filename, "will be uploaded"
+			upload_queue_filenames.append(filename)
+			upload_queue.put({"filename":filename,"rec":one})
 
 		#wait while upload_queue is processed, and do db work at the same time.
 		while True:
 			main_dbWork(db_queue)
-			#Limit the upload queue length to 100
+			#Limit the upload queue length to 10
 			if upload_queue.qsize()<10:
 				break
 
-		print filename, "will be uploaded"
-		upload_queue.put({"filename":filename,"rec":one})
 
 	#wait for all available photos to be uploaded
 	upload_queue.join()
