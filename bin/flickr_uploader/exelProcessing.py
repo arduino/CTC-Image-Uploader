@@ -28,7 +28,8 @@ mainTW=MultiTaskSingleThreadWork()
 typeCodes={ \
 		"y":"Youtube video", \
 		"g":"Github code", \
-		"frz":"Fritzing Image" \
+		"frz":"Fritzing Image", \
+		"ico":"Icon" \
 		}
 #
 # Util function for getting the type name of an
@@ -67,9 +68,12 @@ def recNotMatch(toCompare, base):
 # location string
 #
 #
-def getSheet(sheetLocation):
-	wb = openpyxl.load_workbook(sheetLocation)
-	sheet=wb.active
+def getSheet(workbookLocation, sheetName=""):
+	wb = openpyxl.load_workbook(workbookLocation)
+	if not sheetName:
+		sheet=wb.active
+	else:
+		sheet=wb[sheetName]
 	return sheet
 
 #
@@ -94,65 +98,40 @@ def addNewOrUpdateOld(newRec):
 
 
 
-
-
 #
-# Read data from the exel sheet of youtube videos and 
+# Read data from the exel sheet and 
 # save it in the database
 #
 #
-def processVideoSheet():
+def processSheet(sheet, nameCol, linkCol, shortCodeCol, rangeStart, type, shortCodePrefix):
+	for row in range(rangeStart,sheet.max_row+1):
+		name=sheet.cell(row=row,column=nameCol).value
+		link=sheet.cell(row=row,column=linkCol).value
+		shortCode=sheet.cell(row=row,column=shortCodeCol).value
+		if shortCode!=None and link!=None:
+			orderInSet=getOrderInSet(shortCode)
+			shortCode="ctc-"+shortCodePrefix+"-"+shortCode
+			newRec={"name":name, "short_code":shortCode, "hosted_url":link, "type":type, "order_in_set":orderInSet}
+			addNewOrUpdateOld(newRec)
+			print name, shortCode
+	photoDB.commit()
+
+def processAllSheets():
+	print "Youtube"
 	sheet=getSheet(videoSheetLocation)
-	for row in range(1,sheet.max_row+1):
-		name=sheet.cell(row=row,column=1).value
-		link=sheet.cell(row=row,column=2).value
-		shortCode=sheet.cell(row=row,column=3).value
-		if shortCode!=None and link!=None:
-			orderInSet=getOrderInSet(shortCode)
-			shortCode="ctc-y-"+shortCode
-			newRec={"name":name, "short_code":shortCode, "hosted_url":link, "type":"y", "order_in_set":orderInSet}
-			addNewOrUpdateOld(newRec)
-	photoDB.commit()
+	processSheet(sheet,1,2,3,1,"y","y")
 
-
-#
-# Read data from the exel sheet of github codes and 
-# save it in the database
-#
-#
-def processCodeSheet():
+	print "Github"
 	sheet=getSheet(codeSheetLocation)
-	for row in range(4,sheet.max_row+1):
-		name=sheet.cell(row=row,column=1).value
-		link=sheet.cell(row=row,column=3).value
-		shortCode=sheet.cell(row=row,column=5).value
-		if shortCode!=None and link!=None:
-			orderInSet=getOrderInSet(shortCode)
-			shortCode="ctc-g-"+shortCode
-			newRec={"name":name, "short_code":shortCode, "hosted_url":link, "type":"g", "order_in_set":orderInSet}
-			addNewOrUpdateOld(newRec)
-	photoDB.commit()
+	processSheet(sheet,1,3,5,4,"g","g")
 
-
-#
-# Read data from the exel sheet of github codes and 
-# save it in the database
-#
-#
-def processFritzingSheet():
+	print "Fritzing"
 	sheet=getSheet(fritzingSheetLocation)
-	for row in range(1,sheet.max_row+1):
-		name=sheet.cell(row=row,column=1).value
-		link=sheet.cell(row=row,column=2).value
-		shortCode=sheet.cell(row=row,column=3).value
-		if shortCode!=None and link!=None:
-			orderInSet=getOrderInSet(shortCode)
-			shortCode="ctc-frz-"+shortCode
-			newRec={"name":name, "short_code":shortCode, "hosted_url":link, "type":"f", "order_in_set":orderInSet}
-			addNewOrUpdateOld(newRec)
-			print newRec
-	photoDB.commit()
+	processSheet(sheet,1,2,3,1,"frz","frz")
 
+	print "Icon"
+	sheet=getSheet(codeSheetLocation, "icons")
+	processSheet(sheet,1,2,3,1,"ico","ico")
 
 
 
@@ -168,6 +147,9 @@ def getUnshortenedExtras():
 	"""
 	res=photoDB.makeQuery(cmd)[0].fetchall()
 	return res
+
+
+
 
 #
 # MultiThreadWork task for getting the short URL and regist a
