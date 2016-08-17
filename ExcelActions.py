@@ -3,6 +3,6 @@ from bin.flickr_uploader.exelProcessing import getShortURLForExtras,getOrderInSe
 if __name__=="__main__":
 	#print getOrderInSet("b2-p-1")
 	#print getOrderInSet("b1-p-1-6")
-	#processAllSheets()
-	#getShortURLForExtras()
+	processAllSheets()
+	getShortURLForExtras()
 	outputXML()
