@@ -2,11 +2,6 @@
 # Process the excel sheets for youtube videos and github code
 # Retrive short url.
 #
-# type codes:
-# y: youtube video
-# g: github code
-# frz: fritzing code
-#
 # state codes:
 # 0: not shortened
 # 1: shortened
@@ -15,29 +10,27 @@ import openpyxl
 from mainDB import CTCPhotoDB
 from CreateShortLinks import getShortURL
 from ThreadWork import MultiThreadWork, MultiTaskSingleThreadWork
-
-videoSheetLocation="data/CSV ctc vid.xlsx"
-codeSheetLocation="data/Github bitly sheet.xlsx"
-fritzingSheetLocation="data/FritzingSheet.xlsx"
+from configs import extras_def
 
 photoDB=CTCPhotoDB()
 
 tw=MultiThreadWork(3)
 mainTW=MultiTaskSingleThreadWork()
 
-typeCodes={ \
-		"y":"Youtube video", \
-		"g":"Github code", \
-		"frz":"Fritzing Image", \
-		"ico":"Icon" \
-		}
+
+#
+# Util function for getting all the type names
+#
+#
+def getTypeCodes():
+	return [one["type_code"] for one in extras_def]
 #
 # Util function for getting the type name of an
 # extra record
 #
 #
 def getFullType(typeCode):
-	return typeCodes[typeCode]
+	return filter(lambda x: x["type_code"]==typeCode,extras_def)[0]["full_type"]
 
 #
 # Util function for getting the in-set order 
@@ -59,6 +52,7 @@ def getOrderInSet(shortCode):
 def recNotMatch(toCompare, base):
 	for key in toCompare:
 		if toCompare[key]!=base[key]:
+			print type(toCompare[key]),type(base[key])
 			return True
 	return False
 
@@ -87,6 +81,7 @@ def addNewOrUpdateOld(newRec):
 	if oldRec==None:
 		newRec["short_code"]=shortCode
 		photoDB.addExtra(newRec)
+		message="New record"
 	elif recNotMatch(newRec,oldRec):
 		newRec["state"]=0
 		del newRec["short_code"]
@@ -94,7 +89,10 @@ def addNewOrUpdateOld(newRec):
 			if not (type(newRec[key]) is int):
 				newRec[key]="'{}'".format(newRec[key])
 		photoDB.modifyExtraByShortCode(shortCode, **newRec)
-
+		message="Modifying"
+	else:
+		return
+	print message, newRec["name"], shortCode
 
 
 
@@ -105,7 +103,7 @@ def addNewOrUpdateOld(newRec):
 #
 def processSheet(sheet, nameCol, linkCol, shortCodeCol, rangeStart, type, shortCodePrefix):
 	for row in range(rangeStart,sheet.max_row+1):
-		name=sheet.cell(row=row,column=nameCol).value
+		name=unicode(sheet.cell(row=row,column=nameCol).value)
 		link=sheet.cell(row=row,column=linkCol).value
 		shortCode=sheet.cell(row=row,column=shortCodeCol).value
 		if shortCode!=None and link!=None:
@@ -113,28 +111,40 @@ def processSheet(sheet, nameCol, linkCol, shortCodeCol, rangeStart, type, shortC
 			shortCode="ctc-"+shortCodePrefix+"-"+shortCode
 			newRec={"name":name, "short_code":shortCode, "hosted_url":link, "type":type, "order_in_set":orderInSet}
 			addNewOrUpdateOld(newRec)
-			print name, shortCode
 	photoDB.commit()
 
+#
+# get a list of parameters for processSheet function, from an
+# extras_def record
+#
+#
+def getProcessSheetParams(definition):
+	one=definition
+
+	bookName=one["book_name"]
+	sheetName=one.get("sheet_name","")
+	sheet=getSheet(bookName,sheetName)
+
+	typeCode=one["type_code"]
+	shortCodePrefix=one.get("short_code_prefix",one["type_code"])
+
+	sheetSettings=one["sheet_settings"]
+	args=[sheet]
+	args.extend(sheetSettings)
+	args.extend([typeCode,shortCodePrefix])
+
+	return args
+
+#
+# process all the sheets as defined in extras_def of configs file
+#
+#
 def processAllSheets():
-	print "Youtube"
-	sheet=getSheet(videoSheetLocation)
-	processSheet(sheet,1,2,3,1,"y","y")
-
-	print "Github"
-	sheet=getSheet(codeSheetLocation)
-	processSheet(sheet,1,3,5,4,"g","g")
-
-	print "Fritzing"
-	sheet=getSheet(fritzingSheetLocation)
-	processSheet(sheet,1,2,3,1,"frz","frz")
-
-	print "Icon"
-	sheet=getSheet(codeSheetLocation, "icons")
-	processSheet(sheet,1,2,3,1,"ico","ico")
-
-
-
+	for one in extras_def:
+		print "Processing sheet: ", one["name"]
+		params=getProcessSheetParams(one)
+		processSheet(*params)
+		print "-------------------------"
 
 #
 # Get all records from extras table that hasn't been shortened
@@ -184,7 +194,7 @@ def getShortURLForExtras():
 
 	unshortenedExtras=getUnshortenedExtras()
 	for one in unshortenedExtras:
-		print one["short_code"]
+		print "Requesting shortLink",one["short_code"]
 		tw.addTask(one)
 
 	while tw.processing():
@@ -193,11 +203,15 @@ def getShortURLForExtras():
 	mainTW.process()
 
 
+#
+# Output the extra sheet into a xml document
+#
+#
 def outputXML():
 	outputFile=open("testExtras.txt","w")
 	
 	output="<data>\n"
-	for typeCode in typeCodes:
+	for typeCode in getTypeCodes():
 		output=output+"<category type='"+getFullType(typeCode)+"'>\n"
 		recs=photoDB.getRecByField("extras","type","'"+typeCode+"'").fetchall()
 		for rec in recs:
@@ -207,4 +221,35 @@ def outputXML():
 	
 	outputFile.write(output)
 	outputFile.close()
+
+
+
+#
+# Main procedure
+#
+#
+def exelProcessing():
+	print "Processing all extras sheets"
+	processAllSheets()
+
+	print "Retriving extras shortLinks"
+	getShortURLForExtras()
+
+	print "Outputing xml"
+	outputXML()
+
+
+if __name__=="__main__":
+	for one in ["g","y","frz","ico","dld","fail"]:
+		try:
+			print getFullType(one)
+		except Exception as e:
+			print e
+
+	print getTypeCodes()
+
+	for one in extras_def:
+		print getProcessSheetParams(one)
+
+	processAllSheets()
 
