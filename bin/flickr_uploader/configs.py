@@ -38,8 +38,8 @@ extras_def=[
 
 	{
 		"name":"Fritzing",
-		"book_name":"data/FritzingSheet.xlsx",
-		"sheet_name":"",
+		"book_name":"data/Github bitly sheet.xlsx",
+		"sheet_name":"fritzingImages",
 		"type_code":"frz",
 		"full_type":"Fritzing Image",
 		"sheet_settings":[1,2,3,1]
