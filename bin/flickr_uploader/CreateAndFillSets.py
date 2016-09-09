@@ -115,7 +115,7 @@ def getAllFullyUploadedSets():
 	FROM photos JOIN sets ON photos.set_id==sets.set_id
 	WHERE sets.state==1
 	GROUP BY photos.set_id
-	HAVING COUNT(case when photos.synced & 2 == 0 then 1 else null end)==0
+	HAVING COUNT(case when photos.synced & 1 == 0 then 1 else null end)==0
 	--This is a test HAVING COUNT(case when photos.synced & 2 == 2 then 1 else null end)==3
 	'''
 	res=db.makeQuery(cmd)
@@ -123,9 +123,9 @@ def getAllFullyUploadedSets():
 
 def getOrderedPhotosInSet(set_id):
 	cmd='''
-	SELECT hosted_id
+	SELECT hosted_id, photo_id
 	FROM photos
-	WHERE set_id=='{}' AND synced & 2 ==2
+	WHERE set_id=='{}'
 	ORDER BY order_in_set
 	'''.format(set_id)
 	res=db.makeQuery(cmd)
@@ -144,6 +144,30 @@ def orderFlickrSets():
 		orderFlickrSet(one)
 
 
+
+
+def orderFlickrSetForce(rec):
+	photos=getOrderedPhotosInSet(rec["set_id"]).fetchall()
+	print "Photos in set ",len(photos)
+	photoHIDs=",".join([i["hosted_id"] for i in photos])
+	try:
+		f.photosets.editPhotos(photoset_id=rec["hosted_id"],primary_photo_id=photos[0]["hosted_id"],photo_ids=photoHIDs)
+	except flickrapi.exceptions.FlickrError as e:
+		if e.code==1:
+			print "PhotoSet missing, adding to toFix queue"
+			missingPhotoSet.append(rec["set_id"])
+		else:
+			print "error: ",e
+	else:
+		for photo in photos:
+			db.setPhotoAddedToSet(photo["photo_id"],False)
+		db.modifySetByID(rec["set_id"],state=2).commit()
+		print "ordered: ",rec["hosted_id"]
+
+def orderFlickrSetsForce():
+	res=getAllFullyUploadedSets().fetchall()
+	for one in res:
+		orderFlickrSetForce(one)
 
 
 
@@ -197,8 +221,8 @@ def fixMissingSets():
 #
 def CreateAndFillSets():
 	createFlickrSets()
-	addPhotosToFlickrSets()
-	orderFlickrSets()
+	#addPhotosToFlickrSets()
+	orderFlickrSetsForce()
 
 	fixMissingSets()
 
@@ -207,5 +231,7 @@ def CreateAndFillSets():
 if __name__=="__main__":
 	#unsetPhotosInSet(683635)
 	#addPhotoToFlickrSet({"photoHid":832566,"setHid":683635})
-	#quit()
-	CreateAndFillSets()
+	photoSet=db.getSetByID("683712")
+	orderFlickrSetForce(photoSet)
+	quit()
+	#CreateAndFillSets()

@@ -178,8 +178,10 @@ class CTCPhotoDB:
 	#	Set the hosted_id of a photo.
 	#	The second bit of synced is set 1
 	#
-	def setPhotoAddedToSet(self, photo_id):
-		self.modifyPhotoByID_UpdateSynced(photo_id, synced=2).commit()
+	def setPhotoAddedToSet(self, photo_id, doCommit=True):
+		conn=self.modifyPhotoByID_UpdateSynced(photo_id, synced=2)
+		if doCommit:
+			conn.commit()
 
 	#
 	#	Set the refering_url of a photo.
