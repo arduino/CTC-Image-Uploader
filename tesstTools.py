@@ -1,9 +1,12 @@
-import os
+import os,sys
 from shutil import copyfile
 from bin.flickr_uploader import tools
 
 def backupDB():
     copyfile("maindb.db","maindb_backup.db")
+
+def recoverDB():
+    copyfile("maindb_backup.db","maindb.db")
 
 def cleanUpDBs():
     toRemove=["maindb.db","maindb_old.db"]
@@ -17,7 +20,13 @@ def cleanUpDBs():
     copyfile("maindb_backup.db","maindb.db")
 
 if __name__=="__main__":
-    #backupDB()
-    tools.markSetForShorLinks("684600")
+    args=sys.argv
+
+    if "--backup" in args:
+        backupDB()
+    elif "--recover" in args:
+        recoverDB()
+        
+    #tools.markSetForShorLinks("684600")
     #raw_input("done...Enter to revert")
     #cleanUpDBs()
