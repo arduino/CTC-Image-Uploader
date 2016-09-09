@@ -41,8 +41,19 @@ def deletePhoto(photoID,doCommit=True):
 
 	print "photo_id {} deleted".format(photoID)
 
+def deletePhotos(photos,doCommit=True):
+	setsList=set()
+	for one in photos:
+		deletePhoto(one["photo_id"],False)
+		setsList.add(one["set_id"])
 
+	for set_id in setsList:
+		set_id="'{}'".format(set_id)
+		db.modifyRec("sets",{"set_id":set_id},{"shortlinked":0,"state":1})
+		print "Set_id {} un-shortened".format(set_id)
 
+	if doCommit:
+		db.commit()
 
 
 
@@ -67,8 +78,7 @@ def deletePhotoSet(photoSetID):
 	else:
 		print "photoSet {} is not hosted".format(photoSetID)
 
-	for one in photos:
-		deletePhoto(one["photo_id"],False)
+	deletePhotos(photos)
 
 	db.cleanSetByID(photoSetID).commit()
 

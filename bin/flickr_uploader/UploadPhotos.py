@@ -24,8 +24,8 @@ f = flickrapi.FlickrAPI(flickr_api_key, flickr_api_secret)
 #	It checks if the file exists
 #
 #
-def getFilename(baseName,setName):
-	filename_woExt="./data/images/"+setName.replace(" ","_")+"/"+baseName
+def getFilename(baseName,setName,baseFolder):
+	filename_woExt=baseFolder+setName.replace(" ","_")+"/"+baseName
 	filename=""
 	if os.path.exists(filename_woExt+".jpg"):
 		filename=filename_woExt+".jpg"
@@ -36,7 +36,7 @@ def getFilename(baseName,setName):
 		raise Exception(filename_woExt+" does not exist")
 	return filename
 
-def getFilenameFromRec(rec,db=db):
+def getFilenameFromRec(rec,db=db,baseFolder="./data/images/"):
 	baseName=rec["file_name"]
 	if rec["folder"]:
 		field="folder"
@@ -45,7 +45,7 @@ def getFilenameFromRec(rec,db=db):
 	setName=db.getSetByID(rec[field])["name"]
 	filename=""
 	try:
-		filename=getFilename(baseName,setName)
+		filename=getFilename(baseName,setName,baseFolder)
 	except Exception as e:
 		pass #Ignoring non-exisiting files, since most files don't exist 
 		#print e
