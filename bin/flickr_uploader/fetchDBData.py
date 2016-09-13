@@ -1,5 +1,5 @@
 import sqlite3
-import os,sys
+import os,sys,shutil
 from itertools import groupby, chain
 
 from mainDB import CTCPhotoDB
@@ -25,6 +25,7 @@ ver = 0
 
 dbPath="maindb.db"
 tmpdbPath="maindb_old.db"
+backupPath="maindb_backup.db"
 
 ##################################
 
@@ -193,6 +194,9 @@ def updateDB(photoDB, oldDBPath,keepSetOrderedState=False):
 
 
 def fetchDBData(keepSetOrderedState=False):
+    print "Creating backup..."
+    shutil.copyfile(dbPath,backupPath)
+
     if os.path.isfile(tmpdbPath):
         print tmpdbPath+" already exists."
         quit()
