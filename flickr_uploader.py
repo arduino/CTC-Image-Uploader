@@ -2,7 +2,7 @@
 import sys
 from bin.flickr_uploader.fetchDBData import fetchDBData
 from bin.flickr_uploader.MainProcedure import processAll
-from bin.flickr_uploader.tools import deletePhoto
+from bin.flickr_uploader.tools import deletePhoto, markSetForShortLinks
 
 if __name__=="__main__":
 	args=sys.argv
@@ -22,6 +22,9 @@ if __name__=="__main__":
 	elif "--deletePhoto" in args:
 		photoID=args[args.index("--deletePhoto")+1]
 		deletePhoto(photoID)
+	elif "--reorderSet" in args:
+		setID=args[args.index("--reorderSet")+1]
+		markSetForShortLinks(setID)
 	else:
 		print """
 	Please specify an operation.
@@ -34,4 +37,11 @@ if __name__=="__main__":
 			
 	--process
 		Upload, create flickr sets, generate shortLinks
+
+	--deletePhoto (photoID)
+		Delete a photo from its hosting by its photoID
+
+	--reorderSet (setID)
+		Re-generate the shortlinks of a set by its setID
+
 		"""

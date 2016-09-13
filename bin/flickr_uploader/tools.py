@@ -134,7 +134,7 @@ def flickrDeletePhotosByFilename(filename):
 # Mark a photoset and all its photos as not shortlinked.
 #
 #
-def markSetForShorLinks(set_id):
+def markSetForShortLinks(set_id):
 	set_id="'{}'".format(set_id)
 	db.modifyRec("sets",{"set_id":set_id},{"shortlinked":0})
 	db.modifyRec("photos",{"set_id":set_id},{"synced":"synced&3"})
