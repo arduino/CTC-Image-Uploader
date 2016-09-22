@@ -70,7 +70,7 @@ def getPhotosInfoForAddingToSetsInFlickr():
 	SELECT photos.photo_id, photos.hosted_id as photoHid, sets.set_id, sets.hosted_id as setHid
 	FROM photos INNER JOIN sets
 	on photos.set_id == sets.set_id
-	WHERE sets.state==1 AND photos.synced & 2 == 0 AND photos.synced & 1 == 1
+	WHERE sets.state>0 AND photos.synced & 2 == 0 AND photos.synced & 1 == 1
 	'''
 	res=db.makeQuery(cmd)
 	return res[0]

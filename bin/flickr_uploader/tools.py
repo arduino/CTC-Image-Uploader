@@ -135,8 +135,11 @@ def flickrDeletePhotosByFilename(filename):
 #
 #
 def markSetForShortLinks(set_id):
+	photoSet=db.getSetByID(set_id)
+	state=1 if photoSet["state"] == 2 else photoSet["state"]
+	
 	set_id="'{}'".format(set_id)
-	db.modifyRec("sets",{"set_id":set_id},{"shortlinked":0})
+	db.modifyRec("sets",{"set_id":set_id},{"shortlinked":0,"state":state})
 	db.modifyRec("photos",{"set_id":set_id},{"synced":"synced&3"})
 	db.commit()
 
