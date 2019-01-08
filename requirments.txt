@@ -17,5 +17,5 @@ requests-oauthlib==0.6.1
 requests-toolbelt==0.6.2
 singledispatch==3.4.0.3
 six==1.10.0
-tornado==4.3
+tornado==5.1.1
 Werkzeug==0.11.10
