@@ -1,21 +1,21 @@
 # CTC-Image-Uploader
-This python script gets collection information from a LightRoom database, uploads all the images to flickr, generates bitly short url, and output a pdf.
+This Python script gets collection information from a LightRoom database, uploads all the images to flickr, generates bitly short url, and outputs a pdf.
 It must be used together with a lightroom database file(lcat) and photos/files organized in the specific pattern.
 
-It is recommanded to keep the current database file(main.db).
+It is recommended to keep the current database file(main.db).
 
 Extra configuration can be found in `bin/configs.py`
 
 
 ## Workflow
-Most of the following procedures must be executed in commandline. SQLite browser(http://sqlitebrowser.org/) is also required for working with the data.
+Most of the following procedures must be executed in commandline. SQLite browser(https://sqlitebrowser.org/) is also required for working with the data.
 
 ### Install
 1. Clone the repository into a local directory. Make sure you stay in dev branch
-2. Install python 2.7.13. Follow the instructions in https://www.cyberciti.biz/faq/install-python-linux/ to install 2.7.13
+2. Install Python 2.7.13. Follow the instructions in https://www.cyberciti.biz/faq/install-python-linux/ to install 2.7.13
 3. Install virtualenv. Follow the instructions in https://virtualenv.pypa.io/en/stable/installation/ Note: you may need to install pip before running the commands
 4. Start the venv by running `source venv/bin/activate`
-5. Install requirements from requirements.txt. Type `pip install requirements.txt`
+5. Install requirements from requirements.txt. Type `pip install -r requirements.txt`
 
 ### To add new photos
 1. Make sure you're in the virtual environment by running `source venv/bin/activate`
