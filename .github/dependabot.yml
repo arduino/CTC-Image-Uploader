@@ -1,0 +1,14 @@
+version: 2
+updates:
+- package-ecosystem: pip
+  directory: "/"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: openpyxl
+    versions:
+    - 3.0.6
+  - dependency-name: jinja2
+    versions:
+    - 2.10.1
